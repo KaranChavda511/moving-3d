@@ -6,6 +6,7 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
+    ignores: ["**/*.css"],
     plugins: {
       "tailwind-canonical": tailwindCanonical,
     },
@@ -25,6 +26,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "**/*.css",
   ]),
 ]);
 
