@@ -25,7 +25,7 @@ const Hero3DSection = (data) => {
             DEVELOPERS
           </h1>
 
-          <p className="mb-12 max-w-105 text-sm leading-relaxed text-[#8a8a8a] md:text-[15px]">
+          <p className="max-w-105 mb-12 text-sm leading-relaxed text-[#8a8a8a] md:text-[15px]">
             the best way to reach humans instead of spam folders,
             <br className="hidden md:block" />
             deliver transactional and marketing emails at scale.
@@ -45,7 +45,7 @@ const Hero3DSection = (data) => {
 
       {/* RIGHT PROJECTION GRADIENT */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute right-0 top-0 h-95 w-95">
+        <div className="h-95 w-95 absolute right-0 top-0">
           <div className={styles.layerBlur} />
           <div className="absolute inset-0 opacity-70">
             <Image
