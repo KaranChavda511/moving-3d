@@ -135,7 +135,7 @@ body {
 }
 
 .px-wrapper-v2 {
-  @apply px-3 sm:px-3 md:px-6 lg:px-9 xl:px-12 2xl:px-[72px] 3xl:px-40;
+  @apply px-3 sm:px-3 md:px-6 lg:px-9 xl:px-12 2xl:px-18 3xl:px-40;
 }
 
 .px-wrapper-service {
