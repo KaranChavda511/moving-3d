@@ -1,4 +1,3 @@
-// sections/HomePage/Hero3DSection/index.jsx
 import Image from "next/image";
 import SplineViewer from "@/components/SplineViewer";
 import styles from "./Hero3DSection.module.css";
