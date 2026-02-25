@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install framer-motion)",
+      "Bash(npm run build)",
+      "Bash(identify /home/wmt-pc-25/Documents/moving-3d/public/images/chocolate/1.jpg)",
+      "Bash(ffmpeg -version)",
+      "Bash(sudo apt list --installed)",
+      "Bash(snap list)",
+      "Bash(flatpak list)",
+      "Bash(sudo apt install -y ffmpeg)",
+      "Bash(ffmpeg -i /home/wmt-pc-25/Documents/moving-3d/ChocolateVideo.mp4)"
+    ],
+    "additionalDirectories": [
+      "/home/wmt-pc-25/Documents/moving-3d/public/images",
+      "/home/wmt-pc-25/Documents/moving-3d/public/images/chocolate"
+    ]
+  }
+}

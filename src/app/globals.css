@@ -208,6 +208,30 @@ i svg {
   height: 100%;
 }
 
+/* ── Nano Banana Route Styles ── */
+.nano-banana-page ::selection {
+  background: #f97316;
+  color: #fff;
+}
+
+.nano-banana-page::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nano-banana-page::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nano-banana-page::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.nano-banana-page {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
 /* 3D hero blur glow, copied from Test3d.module.css */
 .layerBlur {
   position: absolute;
