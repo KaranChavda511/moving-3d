@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import AboutSection from '@/components/AtmosScene/AboutSection';
 
 const AtmosScene = dynamic(() => import('@/components/AtmosScene'), {
   ssr: false,
@@ -13,8 +14,12 @@ const AtmosScene = dynamic(() => import('@/components/AtmosScene'), {
 
 export default function AtmosPage() {
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#1a2fa0]">
+    <main>
+      {/* The 3D experience — internally handles its own scroll capture */}
       <AtmosScene />
-    </div>
+
+      {/* Normal-scroll content section below */}
+      <AboutSection />
+    </main>
   );
 }
