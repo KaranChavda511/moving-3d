@@ -96,10 +96,38 @@ function Sky({ scrollProgress }) {
   );
 }
 
-// Cloud component - tints with sky color
+// Cloud GLB model - loaded once, cloned for each instance
+let _cloudModelCache = null;
+let _cloudModelLoading = false;
+const _cloudModelCallbacks = [];
+
+function loadCloudModel(callback) {
+  if (_cloudModelCache) {
+    callback(_cloudModelCache);
+    return;
+  }
+  _cloudModelCallbacks.push(callback);
+  if (_cloudModelLoading) return;
+  _cloudModelLoading = true;
+  const loader = new GLTFLoader();
+  loader.load('/models/Cloud.glb', (gltf) => {
+    const scene = gltf.scene;
+    // Auto-scale to ~1 unit
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const s = maxDim > 0 ? 1 / maxDim : 0.01;
+    scene.scale.set(s, s, s);
+    _cloudModelCache = scene;
+    _cloudModelCallbacks.forEach((cb) => cb(scene));
+    _cloudModelCallbacks.length = 0;
+  });
+}
+
 function CloudMesh({ position, scale = 1, scrollProgress }) {
-  const materialRefs = useRef([]);
-  // Pre-allocate color object
+  const groupRef = useRef();
+  const materialsRef = useRef([]);
   const targetColor = useMemo(() => new THREE.Color(), []);
 
   const getCloudColor = (progress) => {
@@ -110,41 +138,41 @@ function CloudMesh({ position, scale = 1, scrollProgress }) {
     return targetColor.setRGB(0.95, 0.88, 0.85);
   };
 
+  useEffect(() => {
+    const container = groupRef.current;
+    let clone = null;
+    loadCloudModel((original) => {
+      if (!container) return;
+      clone = original.clone(true);
+      // Collect all materials for color tinting
+      clone.traverse((child) => {
+        if (child.isMesh) {
+          child.material = child.material.clone();
+          child.material.transparent = true;
+          child.material.opacity = 0.9;
+          child.material.roughness = 1;
+          materialsRef.current.push(child.material);
+        }
+      });
+      container.add(clone);
+    });
+    return () => {
+      if (clone && container) {
+        container.remove(clone);
+        materialsRef.current.forEach((mat) => mat.dispose());
+        materialsRef.current = [];
+      }
+    };
+  }, []);
+
   useFrame(() => {
     const color = getCloudColor(scrollProgress);
-    materialRefs.current.forEach((mat) => {
-      if (mat) mat.color.lerp(color, 0.05);
+    materialsRef.current.forEach((mat) => {
+      mat.color.lerp(color, 0.05);
     });
   });
 
-  const setRef = (index) => (ref) => {
-    if (ref) materialRefs.current[index] = ref;
-  };
-
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[0.6, 12, 12]} />
-        <meshStandardMaterial ref={setRef(0)} color="white" transparent opacity={0.9} roughness={1} />
-      </mesh>
-      <mesh position={[0.5, 0.1, 0.2]}>
-        <sphereGeometry args={[0.5, 12, 12]} />
-        <meshStandardMaterial ref={setRef(1)} color="white" transparent opacity={0.85} roughness={1} />
-      </mesh>
-      <mesh position={[-0.5, 0.05, -0.1]}>
-        <sphereGeometry args={[0.45, 12, 12]} />
-        <meshStandardMaterial ref={setRef(2)} color="white" transparent opacity={0.85} roughness={1} />
-      </mesh>
-      <mesh position={[0.2, 0.3, 0]}>
-        <sphereGeometry args={[0.4, 12, 12]} />
-        <meshStandardMaterial ref={setRef(3)} color="white" transparent opacity={0.8} roughness={1} />
-      </mesh>
-      <mesh position={[-0.2, 0.25, 0.3]}>
-        <sphereGeometry args={[0.35, 12, 12]} />
-        <meshStandardMaterial ref={setRef(4)} color="white" transparent opacity={0.8} roughness={1} />
-      </mesh>
-    </group>
-  );
+  return <group ref={groupRef} position={position} scale={scale} />;
 }
 
 // Airplane - loads GLB directly with Three.js GLTFLoader (no drei)
@@ -261,30 +289,53 @@ export default function AtmosExperience({ scrollProgress }) {
   }, []);
 
   // Generate clouds along path (deterministic)
+  // Clouds are placed close to the flight path so you fly through them
   const clouds = useMemo(() => {
     const rng = seededRandom(42);
     const cloudArray = [];
-    const numClouds = 45;
 
-    for (let i = 0; i < numClouds; i++) {
-      const t = i / numClouds;
+    // Close clouds — directly around the path, you fly past these
+    for (let i = 0; i < 50; i++) {
+      const t = i / 50;
       const pointOnPath = curve.getPointAt(t);
 
-      let offsetX = (rng() - 0.5) * 30;
-      let offsetY = (rng() - 0.5) * 12;
-      if (Math.abs(offsetX) < 3) {
-        offsetX = offsetX > 0 ? offsetX + 3 : offsetX - 3;
-      }
+      // Place on left or right side of path, close but not blocking
+      const side = rng() > 0.5 ? 1 : -1;
+      const dist = 2.5 + rng() * 5; // 2.5–7.5 units from path
+      const offsetX = side * dist;
+      const offsetY = (rng() - 0.5) * 4; // slight vertical variation
+      const offsetZ = (rng() - 0.5) * 8; // slight depth stagger
 
       cloudArray.push({
         position: [
           pointOnPath.x + offsetX,
           pointOnPath.y + offsetY,
-          pointOnPath.z + (rng() - 0.5) * 20,
+          pointOnPath.z + offsetZ,
         ],
-        scale: 0.8 + rng() * 1.8,
+        scale: 1.0 + rng() * 2.5, // big, close clouds
       });
     }
+
+    // Mid-distance clouds — further out, fill the sky
+    for (let i = 0; i < 30; i++) {
+      const t = i / 30;
+      const pointOnPath = curve.getPointAt(t);
+
+      const side = rng() > 0.5 ? 1 : -1;
+      const dist = 8 + rng() * 12; // 8–20 units from path
+      const offsetY = (rng() - 0.5) * 10;
+      const offsetZ = (rng() - 0.5) * 15;
+
+      cloudArray.push({
+        position: [
+          pointOnPath.x + side * dist,
+          pointOnPath.y + offsetY,
+          pointOnPath.z + offsetZ,
+        ],
+        scale: 0.5 + rng() * 1.5, // smaller, distant clouds
+      });
+    }
+
     return cloudArray;
   }, [curve]);
 
