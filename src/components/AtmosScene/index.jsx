@@ -3,6 +3,7 @@
 import { Canvas } from '@react-three/fiber';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import AtmosExperience from './AtmosExperience';
+import styles from './atmos.module.css';
 
 export default function AtmosScene() {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -82,7 +83,7 @@ export default function AtmosScene() {
         setShowHint(false);
       }
 
-      // Drive text overlay animations with vanilla JS (replaces gsap.set)
+      // Drive text overlay animations with vanilla JS
       textContent.forEach((text, index) => {
         const el = textRefs.current[index];
         if (!el) return;
@@ -100,7 +101,6 @@ export default function AtmosScene() {
           opacity = visibility;
         }
 
-        // Direct style manipulation - GPU-accelerated via transform
         el.style.opacity = opacity;
         el.style.transform = `translateY(-50%) scale(${scale})`;
         el.style.visibility = opacity < 0.01 ? 'hidden' : 'visible';
@@ -136,9 +136,10 @@ export default function AtmosScene() {
   }, [showIntro, textContent]);
 
   return (
-    <div className="atmos-container">
+    <div className="relative h-screen w-screen overflow-hidden">
       {/* 3D Canvas */}
       <Canvas
+        className="absolute! inset-0 h-full w-full"
         camera={{ position: [0, 0, 0], fov: 75 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => { gl.setClearColor('#1a2fa0'); }}
@@ -147,7 +148,11 @@ export default function AtmosScene() {
       </Canvas>
 
       {/* Contrail SVG */}
-      <svg className="contrail-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <svg
+        className="pointer-events-none fixed inset-0 z-8 h-full w-full"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
         <defs>
           <linearGradient id="trailGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="white" stopOpacity="0.9" />
@@ -164,12 +169,12 @@ export default function AtmosScene() {
       </svg>
 
       {/* Fixed Header */}
-      <header className="atmos-header">
-        <div className="atmos-equalizer">
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-center justify-between px-10 py-7 max-md:px-6 max-md:py-5">
+        <div className="flex h-6 items-end gap-0.5">
           {[...Array(12)].map((_, i) => (
             <span
               key={i}
-              className="eq-bar"
+              className={`block w-0.5 bg-white opacity-80 ${styles.eqBar}`}
               style={{
                 animationDelay: `${i * 0.1}s`,
                 height: `${eqBarHeights[i]}px`,
@@ -177,21 +182,35 @@ export default function AtmosScene() {
             />
           ))}
         </div>
-        <div className="atmos-logo">ATMOS</div>
-        <div className="atmos-about">About</div>
+        <div className="font-serif text-[22px] font-normal tracking-[0.35em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
+          ATMOS
+        </div>
+        <div className="pointer-events-auto cursor-pointer text-[15px] font-normal tracking-[0.05em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
+          About
+        </div>
       </header>
 
       {/* Intro title */}
       {showIntro && (
-        <div className="atmos-intro">
-          <h1>
-            <span>A</span><span>T</span><span>M</span><span>O</span><span>S</span>
+        <div className="pointer-events-none fixed top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-center text-white transition-opacity duration-800 ease-in-out">
+          <h1 className="m-0 font-serif text-[clamp(60px,12vw,140px)] font-normal tracking-[0.3em] drop-shadow-[0_4px_30px_rgba(0,0,0,0.3)] max-md:tracking-[0.2em] max-[480px]:tracking-[0.15em]">
+            {'ATMOS'.split('').map((letter, i) => (
+              <span
+                key={i}
+                className={styles.introLetter}
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                {letter}
+              </span>
+            ))}
           </h1>
         </div>
       )}
 
       {showHint && (
-        <div className="atmos-hint">Scroll to begin the journey ↓</div>
+        <div className={`pointer-events-none fixed bottom-15 left-1/2 z-20 text-base font-normal tracking-[0.05em] text-white transition-opacity duration-800 ease-in-out drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)] max-[480px]:bottom-10 max-[480px]:text-sm ${styles.scrollHint}`}>
+          Scroll to begin the journey ↓
+        </div>
       )}
 
       {/* Text overlays */}
@@ -199,25 +218,38 @@ export default function AtmosScene() {
         <div
           key={index}
           ref={setTextRef(index)}
-          className={`atmos-text-overlay text-${text.side}`}
+          className={`pointer-events-none fixed top-[65%] z-15 max-w-85 -translate-y-1/2 text-white will-change-[opacity] ${
+            text.side === 'right'
+              ? 'right-[5%] left-auto text-left'
+              : 'left-[5%] right-auto text-right'
+          }`}
           style={{
             opacity: 0,
+            visibility: 'hidden',
             transformOrigin: text.side === 'right' ? 'right center' : 'left center',
           }}
         >
           {text.isIntroText ? (
-            <p className="body">{text.body}</p>
+            <p className="text-[clamp(14px,1.5vw,17px)] leading-relaxed font-normal opacity-90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.15)]">
+              {text.body}
+            </p>
           ) : (
             <>
-              {text.sup && <div className="sup">{text.sup}</div>}
+              {text.sup && (
+                <div className="mb-2.5 text-[13px] font-normal tracking-[0.15em] opacity-85 drop-shadow-[0_2px_10px_rgba(0,0,0,0.15)]">
+                  {text.sup}
+                </div>
+              )}
               {text.title && (
-                <div className="title">
+                <div className="mb-4 font-serif text-[clamp(36px,5vw,64px)] font-normal uppercase leading-[1.05] tracking-[0.02em] drop-shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
                   {text.title.split('\n').map((line, i) => (
                     <span key={i}>{line}{i < text.title.split('\n').length - 1 && <br />}</span>
                   ))}
                 </div>
               )}
-              <p className="body">{text.body}</p>
+              <p className="text-[clamp(14px,1.5vw,17px)] leading-relaxed font-normal opacity-90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.15)]">
+                {text.body}
+              </p>
             </>
           )}
         </div>
