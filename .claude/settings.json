@@ -10,11 +10,15 @@
       "Bash(flatpak list)",
       "Bash(sudo apt install -y ffmpeg)",
       "Bash(ffmpeg -i /home/wmt-pc-25/Documents/moving-3d/ChocolateVideo.mp4)",
-      "Read(//home/wmt-pc-25/Desktop/Video_extraction/**)"
+      "Read(//home/wmt-pc-25/Desktop/Video_extraction/**)",
+      "WebFetch(domain:atmos.leeroy.ca)",
+      "Read(//tmp/**)",
+      "Bash(node -e \":*)"
     ],
     "additionalDirectories": [
       "/home/wmt-pc-25/Documents/moving-3d/public/images",
-      "/home/wmt-pc-25/Documents/moving-3d/public/images/chocolate"
+      "/home/wmt-pc-25/Documents/moving-3d/public/images/chocolate",
+      "/tmp"
     ]
   }
 }
