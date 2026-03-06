@@ -145,7 +145,8 @@ export default function AtmosScene() {
         <Canvas
           className="absolute! inset-0 h-full w-full"
           camera={{ position: [0, 0, 0], fov: 75 }}
-          gl={{ antialias: true }}
+          gl={{ antialias: true, powerPreference: 'high-performance' }}
+          dpr={[1, 1.5]}
           onCreated={({ gl }) => {
             gl.setClearColor('#1a2fa0');
           }}

@@ -1,18 +1,18 @@
 'use client';
 
-import { Suspense, useRef, useEffect } from 'react';
+import { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import * as THREE from 'three';
+import { Box3, Vector3 } from 'three';
 
 // Shared drag state passed via ref so AstronautModel can read it inside useFrame
 function AstronautModel({ dragRef }) {
   const gltf = useLoader(GLTFLoader, '/models/astronaut.glb');
   const groupRef = useRef();
 
-  const box = new THREE.Box3().setFromObject(gltf.scene);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
+  const box = new Box3().setFromObject(gltf.scene);
+  const size = new Vector3();
+  const center = new Vector3();
   box.getSize(size);
   box.getCenter(center);
   const maxDim = Math.max(size.x, size.y, size.z);
@@ -80,11 +80,26 @@ function SpaceScene({ dragRef }) {
   );
 }
 
+// Static fallback shown when WebGL is unavailable (e.g. mobile GPU context limit)
+function AstronautFallback() {
+  return (
+    <div
+      style={{ width: '100%', height: '100%', background: '#000008' }}
+      className="flex items-center justify-center"
+    >
+      <p className="text-center text-sm text-white/60 px-4">
+        3D preview unavailable on this device
+      </p>
+    </div>
+  );
+}
+
 // Canvas wrapper that attaches pointer/touch listeners for drag-to-rotate
-function AstronautCanvas() {
+// Only mounts the Canvas when `active` is true (intersection-based)
+function AstronautCanvas({ active }) {
   const containerRef = useRef(null);
-  // dragRef holds mutable drag state — no re-renders needed
   const dragRef = useRef({ isDragging: false, lastX: 0, lastY: 0, deltaX: 0, deltaY: 0 });
+  const [webglFailed, setWebglFailed] = useState(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -141,22 +156,59 @@ function AstronautCanvas() {
     };
   }, []);
 
+  if (webglFailed) {
+    return (
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+        <AstronautFallback />
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      <Canvas
-        camera={{ position: [0, 0, 3], fov: 45 }}
-        gl={{ antialias: true }}
-        style={{ width: '100%', height: '100%', display: 'block' }}
-      >
-        <SpaceScene dragRef={dragRef} />
-      </Canvas>
+      {active ? (
+        <Canvas
+          camera={{ position: [0, 0, 3], fov: 45 }}
+          gl={{ antialias: true }}
+          style={{ width: '100%', height: '100%', display: 'block' }}
+          onCreated={({ gl }) => {
+            // Detect lost context and show fallback
+            const canvas = gl.domElement;
+            canvas.addEventListener('webglcontextlost', (e) => {
+              e.preventDefault();
+              setWebglFailed(true);
+            });
+          }}
+        >
+          <SpaceScene dragRef={dragRef} />
+        </Canvas>
+      ) : (
+        <div style={{ width: '100%', height: '100%', background: '#000008' }} />
+      )}
     </div>
   );
 }
 
 export default function AboutSection() {
+  const sectionRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Only mount the WebGL Canvas when the section scrolls into view
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="relative overflow-hidden bg-[#eef0f4]">
+    <section ref={sectionRef} className="relative overflow-hidden bg-[#eef0f4]">
       {/* Decorative arcs — repositioned per breakpoint */}
       <svg
         aria-hidden="true"
@@ -189,7 +241,7 @@ export default function AboutSection() {
               <div className="h-1.5 w-1.5 rounded-full bg-[#2a2a2a]" />
             </div>
             <div className="overflow-hidden rounded-[1.6rem] lg:rounded-4xl" style={{ aspectRatio: '4/3' }}>
-              <AstronautCanvas />
+              <AstronautCanvas active={isVisible} />
             </div>
             <div className="mx-auto mt-2 h-1 w-16 lg:w-20 rounded-full bg-white opacity-15" />
           </div>
@@ -225,7 +277,7 @@ export default function AboutSection() {
               <div className="h-1.5 w-1.5 rounded-full bg-[#2a2a2a]" />
             </div>
             <div className="overflow-hidden rounded-[1.4rem]" style={{ aspectRatio: '4/3' }}>
-              <AstronautCanvas />
+              <AstronautCanvas active={isVisible} />
             </div>
             <div className="mx-auto mt-2 h-1 w-14 rounded-full bg-white opacity-15" />
           </div>

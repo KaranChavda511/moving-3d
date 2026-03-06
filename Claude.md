@@ -77,6 +77,15 @@ export default function Counter() {
 - **Do NOT** manually use `useMemo` or `useCallback` for performance optimizations. The compiler handles this automatically.
 - Write simple, idiomatic React code.
 
+### 5. WebGL & Three.js (React Three Fiber)
+
+- **One WebGL context per page.** Mobile GPUs typically support only a single active WebGL context. Having multiple `<Canvas>` instances on the same page will cause `"WebGL context could not be created"` errors and crash all 3D content.
+- **Lazy-mount additional canvases.** If a page needs more than one 3D scene (e.g., a flight experience + an astronaut viewer), use `IntersectionObserver` to only mount the second `<Canvas>` when it scrolls into view. Pass an `active` prop to conditionally render the Canvas.
+- **Handle context loss gracefully.** Always listen for `webglcontextlost` on the canvas element and show a static fallback instead of letting the page crash.
+- **Cap pixel ratio.** Use `dpr={[1, 1.5]}` on `<Canvas>` to prevent mobile devices from rendering at 3x, which wastes GPU memory.
+- **Use `powerPreference: 'high-performance'`** in the `gl` prop to hint the browser to use the discrete GPU when available.
+- **Tree-shake Three.js imports.** Use named imports (`import { Vector3 } from 'three'`) instead of `import * as THREE from 'three'`.
+
 ---
 
 ## 📦 Project Structure

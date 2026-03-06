@@ -2,7 +2,15 @@
 
 import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
+import {
+  BackSide,
+  Box3,
+  CatmullRomCurve3,
+  Color,
+  PerspectiveCamera,
+  Quaternion,
+  Vector3,
+} from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // Deterministic pseudo-random number generator (seeded)
@@ -34,7 +42,7 @@ function Sky({ scrollRef }) {
       <sphereGeometry args={[1, 32, 32]} />
       <shaderMaterial
         ref={materialRef}
-        side={THREE.BackSide}
+        side={BackSide}
         uniforms={{
           uTime: { value: 0 },
           uProgress: { value: 0 },
@@ -115,8 +123,8 @@ function loadCloudModel(callback) {
   loader.load('/models/Cloud.glb', (gltf) => {
     const scene = gltf.scene;
     // Auto-scale to ~1 unit
-    const box = new THREE.Box3().setFromObject(scene);
-    const size = new THREE.Vector3();
+    const box = new Box3().setFromObject(scene);
+    const size = new Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
     const s = maxDim > 0 ? 1 / maxDim : 0.01;
@@ -151,7 +159,7 @@ function releaseCloudModel() {
 function CloudMesh({ position, scale = 1, scrollRef }) {
   const groupRef = useRef();
   const materialsRef = useRef([]);
-  const targetColor = new THREE.Color();
+  const targetColor = new Color();
 
   const getCloudColor = (progress) => {
     if (progress < 0.25) return targetColor.setRGB(0.92, 0.92, 0.98);
@@ -208,9 +216,9 @@ function Airplane({ curve, scrollRef }) {
   const modelObjRef = useRef(null);
 
   // Pre-allocate reusable objects to avoid GC pressure in useFrame
-  const _forward = new THREE.Vector3();
-  const _rollQuat = new THREE.Quaternion();
-  const _forwardAxis = new THREE.Vector3();
+  const _forward = new Vector3();
+  const _rollQuat = new Quaternion();
+  const _forwardAxis = new Vector3();
 
   // Load GLB model using Three.js GLTFLoader directly, add to container imperatively
   useEffect(() => {
@@ -218,8 +226,8 @@ function Airplane({ curve, scrollRef }) {
     const loader = new GLTFLoader();
     loader.load('/models/Airplane.glb', (gltf) => {
       const scene = gltf.scene;
-      const box = new THREE.Box3().setFromObject(scene);
-      const size = new THREE.Vector3();
+      const box = new Box3().setFromObject(scene);
+      const size = new Vector3();
       box.getSize(size);
       const maxDim = Math.max(size.x, size.y, size.z);
       const s = maxDim > 0 ? 1 / maxDim : 0.01;
@@ -288,24 +296,24 @@ export default function AtmosExperience({ scrollRef }) {
   const { camera } = useThree();
 
   // Pre-allocate reusable objects for camera animation
-  const _targetQuat = new THREE.Quaternion();
-  const _tempCam = new THREE.PerspectiveCamera();
+  const _targetQuat = new Quaternion();
+  const _tempCam = new PerspectiveCamera();
 
   // Flight path curve
   const points = [
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0.8, 0.5, -10),
-    new THREE.Vector3(-1.5, 1.2, -20),
-    new THREE.Vector3(1.2, 2.0, -30),
-    new THREE.Vector3(-0.8, 1.5, -40),
-    new THREE.Vector3(2.0, 2.5, -50),
-    new THREE.Vector3(-1.2, 2.0, -60),
-    new THREE.Vector3(0.6, 3.0, -70),
-    new THREE.Vector3(-1.5, 2.5, -80),
-    new THREE.Vector3(0.3, 3.5, -90),
-    new THREE.Vector3(1.0, 2.8, -100),
+    new Vector3(0, 0, 0),
+    new Vector3(0.8, 0.5, -10),
+    new Vector3(-1.5, 1.2, -20),
+    new Vector3(1.2, 2.0, -30),
+    new Vector3(-0.8, 1.5, -40),
+    new Vector3(2.0, 2.5, -50),
+    new Vector3(-1.2, 2.0, -60),
+    new Vector3(0.6, 3.0, -70),
+    new Vector3(-1.5, 2.5, -80),
+    new Vector3(0.3, 3.5, -90),
+    new Vector3(1.0, 2.8, -100),
   ];
-  const curve = new THREE.CatmullRomCurve3(points);
+  const curve = new CatmullRomCurve3(points);
 
   // Generate clouds along path (deterministic)
   // Clouds are placed close to the flight path so you fly through them
@@ -313,8 +321,8 @@ export default function AtmosExperience({ scrollRef }) {
   const clouds = [];
 
   // Close clouds — directly around the path, you fly past these
-  for (let i = 0; i < 50; i++) {
-    const t = i / 50;
+  for (let i = 0; i < 30; i++) {
+    const t = i / 30;
     const pointOnPath = curve.getPointAt(t);
 
     // Place on left or right side of path, close but not blocking
@@ -335,8 +343,8 @@ export default function AtmosExperience({ scrollRef }) {
   }
 
   // Mid-distance clouds — further out, fill the sky
-  for (let i = 0; i < 30; i++) {
-    const t = i / 30;
+  for (let i = 0; i < 15; i++) {
+    const t = i / 15;
     const pointOnPath = curve.getPointAt(t);
 
     const side = rng() > 0.5 ? 1 : -1;
