@@ -14,7 +14,11 @@
       "WebFetch(domain:atmos.leeroy.ca)",
       "Read(//tmp/**)",
       "Bash(node -e \":*)",
-      "Bash(npx eslint src/)"
+      "Bash(npx eslint src/)",
+      "Bash(npx --yes @gltf-transform/cli inspect c:/Users/KaranChavda/Documents/moving-3d/public/models/astronaut.glb)",
+      "Bash(npx --yes @gltf-transform/cli optimize c:/Users/KaranChavda/Documents/moving-3d/public/models/astronaut.glb c:/Users/KaranChavda/Documents/moving-3d/public/models/astronaut-optimized.glb --compress meshopt --texture-compress webp --texture-size 1024)",
+      "Bash(mv c:/Users/KaranChavda/Documents/moving-3d/public/models/astronaut.glb c:/Users/KaranChavda/Documents/moving-3d/public/models/astronaut-original.glb)",
+      "Bash(mv c:/Users/KaranChavda/Documents/moving-3d/public/models/astronaut-optimized.glb c:/Users/KaranChavda/Documents/moving-3d/public/models/astronaut.glb)"
     ],
     "additionalDirectories": [
       "/home/wmt-pc-25/Documents/moving-3d/public/images",

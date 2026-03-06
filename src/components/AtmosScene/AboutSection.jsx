@@ -3,11 +3,14 @@
 import { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { Box3, Vector3 } from 'three';
 
 // Shared drag state passed via ref so AstronautModel can read it inside useFrame
 function AstronautModel({ dragRef }) {
-  const gltf = useLoader(GLTFLoader, '/models/astronaut.glb');
+  const gltf = useLoader(GLTFLoader, '/models/astronaut.glb', (loader) => {
+    loader.setMeshoptDecoder(MeshoptDecoder);
+  });
   const groupRef = useRef();
 
   const box = new Box3().setFromObject(gltf.scene);
