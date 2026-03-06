@@ -104,6 +104,12 @@ function AstronautCanvas({ active }) {
   const dragRef = useRef({ isDragging: false, lastX: 0, lastY: 0, deltaX: 0, deltaY: 0 });
   const [webglFailed, setWebglFailed] = useState(false);
 
+  // Reset fallback when section becomes visible again — the old context
+  // was lost because it was unmounted, not because the GPU truly failed.
+  useEffect(() => {
+    if (active) setWebglFailed(false);
+  }, [active]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
