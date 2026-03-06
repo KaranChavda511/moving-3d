@@ -4,6 +4,5 @@
   "singleQuote": false,
   "tabWidth": 2,
   "trailingComma": "es5",
-  "tailwindConfig": "./tailwind.config.js",
   "tailwindFunctions": ["clsx", "cn", "cva"]
 }

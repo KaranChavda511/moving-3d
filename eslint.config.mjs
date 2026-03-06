@@ -1,6 +1,8 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import tailwindCanonical from "eslint-plugin-tailwind-canonical-classes";
+import reactCompiler from "eslint-plugin-react-compiler";
+import prettierConfig from "eslint-config-prettier";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -9,6 +11,7 @@ const eslintConfig = defineConfig([
     ignores: ["**/*.css"],
     plugins: {
       "tailwind-canonical": tailwindCanonical,
+      "react-compiler": reactCompiler,
     },
     rules: {
       "tailwind-canonical/tailwind-canonical-classes": [
@@ -17,8 +20,10 @@ const eslintConfig = defineConfig([
           cssPath: "src/app/globals.css",
         },
       ],
+      "react-compiler/react-compiler": "error",
     },
   },
+  prettierConfig,
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

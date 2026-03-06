@@ -24,6 +24,8 @@ function AstronautModel({ dragRef }) {
   // Track current euler angles so drag blends into idle
   const rotY = useRef(0);
   const rotX = useRef(0);
+  // Track how much drag delta we've already consumed (avoids mutating the prop ref)
+  const consumedDrag = useRef({ deltaX: 0, deltaY: 0 });
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -31,15 +33,20 @@ function AstronautModel({ dragRef }) {
     const drag = dragRef.current;
 
     if (drag.isDragging) {
-      // Apply drag delta scaled to feel natural
-      rotY.current += drag.deltaX * 0.008;
-      rotX.current += drag.deltaY * 0.008;
+      // Calculate unconsumed delta
+      const dx = drag.deltaX - consumedDrag.current.deltaX;
+      const dy = drag.deltaY - consumedDrag.current.deltaY;
+      consumedDrag.current.deltaX = drag.deltaX;
+      consumedDrag.current.deltaY = drag.deltaY;
+
+      rotY.current += dx * 0.008;
+      rotX.current += dy * 0.008;
       // Clamp X so it doesn't flip upside down
       rotX.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotX.current));
-      // Consume delta
-      drag.deltaX = 0;
-      drag.deltaY = 0;
     } else {
+      // Stay in sync while not dragging
+      consumedDrag.current.deltaX = drag.deltaX;
+      consumedDrag.current.deltaY = drag.deltaY;
       // Slow idle auto-rotate when not dragging
       rotY.current += delta * 0.25;
       // Ease rotX back to 0
