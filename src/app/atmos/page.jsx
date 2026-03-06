@@ -15,11 +15,15 @@ const AtmosScene = dynamic(() => import('@/components/AtmosScene'), {
 export default function AtmosPage() {
   return (
     <main>
-      {/* The 3D experience — internally handles its own scroll capture */}
+      {/* Scroll-driven 3D flight — uses sticky+tall-wrapper, native scroll */}
       <AtmosScene />
 
-      {/* Normal-scroll content section below */}
+      {/* Normal-flow sections stack naturally below */}
       <AboutSection />
+
+      {/* Future scroll sections go here — each owns its own scroll progress */}
+      {/* <NightFlightSection /> */}
+      {/* <LandingSection /> */}
     </main>
   );
 }

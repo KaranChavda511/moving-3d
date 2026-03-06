@@ -15,7 +15,7 @@ function seededRandom(seed) {
 }
 
 // Sky gradient sphere - custom shader
-function Sky({ scrollProgress }) {
+function Sky({ scrollRef }) {
   const meshRef = useRef();
   const materialRef = useRef();
 
@@ -24,7 +24,7 @@ function Sky({ scrollProgress }) {
       meshRef.current.rotation.y += 0.0001;
     }
     if (materialRef.current) {
-      materialRef.current.uniforms.uProgress.value = scrollProgress;
+      materialRef.current.uniforms.uProgress.value = scrollRef.current;
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
     }
   });
@@ -37,7 +37,7 @@ function Sky({ scrollProgress }) {
         side={THREE.BackSide}
         uniforms={{
           uTime: { value: 0 },
-          uProgress: { value: scrollProgress },
+          uProgress: { value: 0 },
         }}
         vertexShader={`
           varying vec3 vPosition;
@@ -100,8 +100,10 @@ function Sky({ scrollProgress }) {
 let _cloudModelCache = null;
 let _cloudModelLoading = false;
 const _cloudModelCallbacks = [];
+let _cloudModelRefCount = 0;
 
 function loadCloudModel(callback) {
+  _cloudModelRefCount++;
   if (_cloudModelCache) {
     callback(_cloudModelCache);
     return;
@@ -125,7 +127,28 @@ function loadCloudModel(callback) {
   });
 }
 
-function CloudMesh({ position, scale = 1, scrollProgress }) {
+function releaseCloudModel() {
+  _cloudModelRefCount--;
+  if (_cloudModelRefCount <= 0 && _cloudModelCache) {
+    _cloudModelCache.traverse((child) => {
+      if (child.isMesh) {
+        child.geometry?.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      }
+    });
+    _cloudModelCache = null;
+    _cloudModelLoading = false;
+    _cloudModelRefCount = 0;
+  }
+}
+
+function CloudMesh({ position, scale = 1, scrollRef }) {
   const groupRef = useRef();
   const materialsRef = useRef([]);
   const targetColor = useMemo(() => new THREE.Color(), []);
@@ -162,11 +185,12 @@ function CloudMesh({ position, scale = 1, scrollProgress }) {
         materialsRef.current.forEach((mat) => mat.dispose());
         materialsRef.current = [];
       }
+      releaseCloudModel();
     };
   }, []);
 
   useFrame(() => {
-    const color = getCloudColor(scrollProgress);
+    const color = getCloudColor(scrollRef.current);
     materialsRef.current.forEach((mat) => {
       mat.color.lerp(color, 0.05);
     });
@@ -176,7 +200,7 @@ function CloudMesh({ position, scale = 1, scrollProgress }) {
 }
 
 // Airplane - loads GLB directly with Three.js GLTFLoader (no drei)
-function Airplane({ curve, scrollProgress }) {
+function Airplane({ curve, scrollRef }) {
   const meshRef = useRef();
   const currentRoll = useRef(0);
   const { camera } = useThree();
@@ -228,7 +252,7 @@ function Airplane({ curve, scrollProgress }) {
     meshRef.current.quaternion.copy(camera.quaternion);
 
     // Banking/tilt from curve direction
-    const progress = Math.max(0, Math.min(1, scrollProgress));
+    const progress = Math.max(0, Math.min(1, scrollRef.current));
     const ahead = Math.min(1, progress + 0.03);
     const behind = Math.max(0, progress - 0.03);
     const pointAhead = curve.getPointAt(ahead);
@@ -260,7 +284,7 @@ function Airplane({ curve, scrollProgress }) {
 }
 
 // Main experience
-export default function AtmosExperience({ scrollProgress }) {
+export default function AtmosExperience({ scrollRef }) {
   const { camera } = useThree();
 
   // Pre-allocate reusable objects for camera animation
@@ -341,7 +365,7 @@ export default function AtmosExperience({ scrollProgress }) {
 
   // Camera moves along curve based on scroll
   useFrame(() => {
-    const progress = Math.max(0, Math.min(1, scrollProgress));
+    const progress = Math.max(0, Math.min(1, scrollRef.current));
     const pos = curve.getPointAt(progress);
     const lookAhead = Math.min(1, progress + 0.025);
     const lookAtPos = curve.getPointAt(lookAhead);
@@ -356,7 +380,7 @@ export default function AtmosExperience({ scrollProgress }) {
 
   return (
     <>
-      <Sky scrollProgress={scrollProgress} />
+      <Sky scrollRef={scrollRef} />
 
       {/* Lighting */}
       <ambientLight intensity={1.2} color="#ccd8ff" />
@@ -364,7 +388,7 @@ export default function AtmosExperience({ scrollProgress }) {
       <hemisphereLight skyColor="#aabbff" groundColor="#ffd4b0" intensity={0.8} />
 
       {/* Airplane with manual bobbing */}
-      <Airplane curve={curve} scrollProgress={scrollProgress} />
+      <Airplane curve={curve} scrollRef={scrollRef} />
 
       {/* Clouds */}
       {clouds.map((cloud, idx) => (
@@ -372,7 +396,7 @@ export default function AtmosExperience({ scrollProgress }) {
           key={idx}
           position={cloud.position}
           scale={cloud.scale}
-          scrollProgress={scrollProgress}
+          scrollRef={scrollRef}
         />
       ))}
     </>
