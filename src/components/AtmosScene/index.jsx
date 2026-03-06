@@ -1,10 +1,33 @@
 'use client';
 
-import { Canvas } from '@react-three/fiber';
-import { useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'motion/react';
 import AtmosExperience from './AtmosExperience';
 import styles from './atmos.module.css';
+
+// Caps render loop to ~30fps to reduce main-thread work
+function FrameThrottler() {
+  const { invalidate } = useThree();
+  const lastTime = useRef(0);
+
+  useEffect(() => {
+    // Set animation loop to throttle to ~30fps
+    let raf;
+    const interval = 1000 / 30;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      const now = performance.now();
+      if (now - lastTime.current < interval) return;
+      lastTime.current = now;
+      invalidate();
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [invalidate]);
+
+  return null;
+}
 
 // Text overlay that fades in/out based on scroll progress range
 function TextOverlay({ text, start, end, scrollYProgress }) {
@@ -147,10 +170,12 @@ export default function AtmosScene() {
           camera={{ position: [0, 0, 0], fov: 75 }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
           dpr={[1, 1.5]}
+          frameloop="demand"
           onCreated={({ gl }) => {
             gl.setClearColor('#1a2fa0');
           }}
         >
+          <FrameThrottler />
           <AtmosExperience scrollRef={scrollRef} />
         </Canvas>
 
