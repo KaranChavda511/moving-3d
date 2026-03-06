@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useRef, useMemo, useEffect } from 'react';
+import { Suspense, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as THREE from 'three';
@@ -10,21 +10,16 @@ function AstronautModel({ dragRef }) {
   const gltf = useLoader(GLTFLoader, '/models/astronaut.glb');
   const groupRef = useRef();
 
-  const { scale, offsetX, offsetZ, offsetY } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(gltf.scene);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    box.getSize(size);
-    box.getCenter(center);
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const s = 1.8 / maxDim;
-    return {
-      scale: s,
-      offsetX: -center.x * s,
-      offsetZ: -center.z * s,
-      offsetY: -center.y * s,
-    };
-  }, [gltf.scene]);
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const scale = 1.8 / maxDim;
+  const offsetX = -center.x * scale;
+  const offsetZ = -center.z * scale;
+  const offsetY = -center.y * scale;
 
   // Track current euler angles so drag blends into idle
   const rotY = useRef(0);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
-import { useScroll, useTransform, useMotionValueEvent } from "framer-motion";
+import { useRef, useEffect } from "react";
+import { useScroll, useTransform, useMotionValueEvent } from "motion/react";
 
 export default function ProductBottleScroll({ product }) {
   const wrapperRef = useRef(null);
@@ -24,47 +24,44 @@ export default function ProductBottleScroll({ product }) {
     [0, frameCount - 1]
   );
 
-  const drawFrame = useCallback(
-    (index) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      const img = imagesRef.current[index];
-      if (!img || !img.complete) return;
+  const drawFrame = (index) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const img = imagesRef.current[index];
+    if (!img || !img.complete) return;
 
-      const rect = canvas.getBoundingClientRect();
-      // Cap canvas resolution at 1x CSS pixels to avoid
-      // upscaling low-res source images on HiDPI screens
-      const cw = rect.width;
-      const ch = rect.height;
+    const rect = canvas.getBoundingClientRect();
+    // Cap canvas resolution at 1x CSS pixels to avoid
+    // upscaling low-res source images on HiDPI screens
+    const cw = rect.width;
+    const ch = rect.height;
 
-      if (canvas.width !== cw || canvas.height !== ch) {
-        canvas.width = cw;
-        canvas.height = ch;
-      }
+    if (canvas.width !== cw || canvas.height !== ch) {
+      canvas.width = cw;
+      canvas.height = ch;
+    }
 
-      // Enable image smoothing for better quality when scaling
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.clearRect(0, 0, cw, ch);
+    // Enable image smoothing for better quality when scaling
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.clearRect(0, 0, cw, ch);
 
-      // cover fit — fill entire canvas, crop overflow
-      const imgRatio = img.naturalWidth / img.naturalHeight;
-      const canvasRatio = cw / ch;
-      let dw, dh;
-      if (imgRatio > canvasRatio) {
-        dh = ch;
-        dw = ch * imgRatio;
-      } else {
-        dw = cw;
-        dh = cw / imgRatio;
-      }
-      const dx = (cw - dw) / 2;
-      const dy = (ch - dh) / 2;
-      ctx.drawImage(img, dx, dy, dw, dh);
-    },
-    []
-  );
+    // cover fit — fill entire canvas, crop overflow
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const canvasRatio = cw / ch;
+    let dw, dh;
+    if (imgRatio > canvasRatio) {
+      dh = ch;
+      dw = ch * imgRatio;
+    } else {
+      dw = cw;
+      dh = cw / imgRatio;
+    }
+    const dx = (cw - dw) / 2;
+    const dy = (ch - dh) / 2;
+    ctx.drawImage(img, dx, dy, dw, dh);
+  };
 
   // Preload images
   useEffect(() => {

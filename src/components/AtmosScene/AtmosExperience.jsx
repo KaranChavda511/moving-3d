@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -151,7 +151,7 @@ function releaseCloudModel() {
 function CloudMesh({ position, scale = 1, scrollRef }) {
   const groupRef = useRef();
   const materialsRef = useRef([]);
-  const targetColor = useMemo(() => new THREE.Color(), []);
+  const targetColor = new THREE.Color();
 
   const getCloudColor = (progress) => {
     if (progress < 0.25) return targetColor.setRGB(0.92, 0.92, 0.98);
@@ -208,9 +208,9 @@ function Airplane({ curve, scrollRef }) {
   const modelObjRef = useRef(null);
 
   // Pre-allocate reusable objects to avoid GC pressure in useFrame
-  const _forward = useMemo(() => new THREE.Vector3(), []);
-  const _rollQuat = useMemo(() => new THREE.Quaternion(), []);
-  const _forwardAxis = useMemo(() => new THREE.Vector3(), []);
+  const _forward = new THREE.Vector3();
+  const _rollQuat = new THREE.Quaternion();
+  const _forwardAxis = new THREE.Vector3();
 
   // Load GLB model using Three.js GLTFLoader directly, add to container imperatively
   useEffect(() => {
@@ -288,80 +288,71 @@ export default function AtmosExperience({ scrollRef }) {
   const { camera } = useThree();
 
   // Pre-allocate reusable objects for camera animation
-  const _targetQuat = useMemo(() => new THREE.Quaternion(), []);
-  const _tempCam = useMemo(() => {
-    const cam = new THREE.PerspectiveCamera();
-    return cam;
-  }, []);
+  const _targetQuat = new THREE.Quaternion();
+  const _tempCam = new THREE.PerspectiveCamera();
 
   // Flight path curve
-  const curve = useMemo(() => {
-    const points = [
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0.8, 0.5, -10),
-      new THREE.Vector3(-1.5, 1.2, -20),
-      new THREE.Vector3(1.2, 2.0, -30),
-      new THREE.Vector3(-0.8, 1.5, -40),
-      new THREE.Vector3(2.0, 2.5, -50),
-      new THREE.Vector3(-1.2, 2.0, -60),
-      new THREE.Vector3(0.6, 3.0, -70),
-      new THREE.Vector3(-1.5, 2.5, -80),
-      new THREE.Vector3(0.3, 3.5, -90),
-      new THREE.Vector3(1.0, 2.8, -100),
-    ];
-    return new THREE.CatmullRomCurve3(points);
-  }, []);
+  const points = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.8, 0.5, -10),
+    new THREE.Vector3(-1.5, 1.2, -20),
+    new THREE.Vector3(1.2, 2.0, -30),
+    new THREE.Vector3(-0.8, 1.5, -40),
+    new THREE.Vector3(2.0, 2.5, -50),
+    new THREE.Vector3(-1.2, 2.0, -60),
+    new THREE.Vector3(0.6, 3.0, -70),
+    new THREE.Vector3(-1.5, 2.5, -80),
+    new THREE.Vector3(0.3, 3.5, -90),
+    new THREE.Vector3(1.0, 2.8, -100),
+  ];
+  const curve = new THREE.CatmullRomCurve3(points);
 
   // Generate clouds along path (deterministic)
   // Clouds are placed close to the flight path so you fly through them
-  const clouds = useMemo(() => {
-    const rng = seededRandom(42);
-    const cloudArray = [];
+  const rng = seededRandom(42);
+  const clouds = [];
 
-    // Close clouds — directly around the path, you fly past these
-    for (let i = 0; i < 50; i++) {
-      const t = i / 50;
-      const pointOnPath = curve.getPointAt(t);
+  // Close clouds — directly around the path, you fly past these
+  for (let i = 0; i < 50; i++) {
+    const t = i / 50;
+    const pointOnPath = curve.getPointAt(t);
 
-      // Place on left or right side of path, close but not blocking
-      const side = rng() > 0.5 ? 1 : -1;
-      const dist = 2.5 + rng() * 5; // 2.5–7.5 units from path
-      const offsetX = side * dist;
-      const offsetY = (rng() - 0.5) * 4; // slight vertical variation
-      const offsetZ = (rng() - 0.5) * 8; // slight depth stagger
+    // Place on left or right side of path, close but not blocking
+    const side = rng() > 0.5 ? 1 : -1;
+    const dist = 2.5 + rng() * 5; // 2.5–7.5 units from path
+    const offsetX = side * dist;
+    const offsetY = (rng() - 0.5) * 4; // slight vertical variation
+    const offsetZ = (rng() - 0.5) * 8; // slight depth stagger
 
-      cloudArray.push({
-        position: [
-          pointOnPath.x + offsetX,
-          pointOnPath.y + offsetY,
-          pointOnPath.z + offsetZ,
-        ],
-        scale: 1.0 + rng() * 2.5, // big, close clouds
-      });
-    }
+    clouds.push({
+      position: [
+        pointOnPath.x + offsetX,
+        pointOnPath.y + offsetY,
+        pointOnPath.z + offsetZ,
+      ],
+      scale: 1.0 + rng() * 2.5, // big, close clouds
+    });
+  }
 
-    // Mid-distance clouds — further out, fill the sky
-    for (let i = 0; i < 30; i++) {
-      const t = i / 30;
-      const pointOnPath = curve.getPointAt(t);
+  // Mid-distance clouds — further out, fill the sky
+  for (let i = 0; i < 30; i++) {
+    const t = i / 30;
+    const pointOnPath = curve.getPointAt(t);
 
-      const side = rng() > 0.5 ? 1 : -1;
-      const dist = 8 + rng() * 12; // 8–20 units from path
-      const offsetY = (rng() - 0.5) * 10;
-      const offsetZ = (rng() - 0.5) * 15;
+    const side = rng() > 0.5 ? 1 : -1;
+    const dist = 8 + rng() * 12; // 8–20 units from path
+    const offsetY = (rng() - 0.5) * 10;
+    const offsetZ = (rng() - 0.5) * 15;
 
-      cloudArray.push({
-        position: [
-          pointOnPath.x + side * dist,
-          pointOnPath.y + offsetY,
-          pointOnPath.z + offsetZ,
-        ],
-        scale: 0.5 + rng() * 1.5, // smaller, distant clouds
-      });
-    }
-
-    return cloudArray;
-  }, [curve]);
+    clouds.push({
+      position: [
+        pointOnPath.x + side * dist,
+        pointOnPath.y + offsetY,
+        pointOnPath.z + offsetZ,
+      ],
+      scale: 0.5 + rng() * 1.5, // smaller, distant clouds
+    });
+  }
 
   // Camera moves along curve based on scroll
   useFrame(() => {

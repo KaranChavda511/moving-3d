@@ -1,8 +1,8 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo } from 'react';
-import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform, useMotionValueEvent } from 'motion/react';
 import AtmosExperience from './AtmosExperience';
 import styles from './atmos.module.css';
 
@@ -90,58 +90,52 @@ export default function AtmosScene() {
   const trailY2 = useTransform(scrollYProgress, [0, 1], [48, 100]);
 
   // Text content with scroll ranges (start, end) instead of single progress points
-  const textContent = useMemo(
-    () => [
-      {
-        start: 0.06,
-        end: 0.2,
-        sup: null,
-        title: null,
-        body: 'Hello passengers and welcome aboard. Please sit back, relax, and enjoy the view while we tell you some of our favourite facts about the aviation world.',
-        isIntroText: true,
-        side: 'right',
-      },
-      {
-        start: 0.22,
-        end: 0.38,
-        sup: 'Fact #01',
-        title: 'SKY\nBABIES',
-        body: 'Apart from a crash, the worst nightmare of every flight attendant is childbirth on board. Although extremely rare, nearly 60 babies were born in the sky!',
-        side: 'right',
-      },
-      {
-        start: 0.40,
-        end: 0.56,
-        sup: 'Fact #02',
-        title: 'FORBIDDEN\nNUMBER',
-        body: "Since the number 13 is considered an unlucky number in Western culture, most airlines don't have a row 13 on their planes!",
-        side: 'left',
-      },
-      {
-        start: 0.58,
-        end: 0.74,
-        sup: 'Fact #03',
-        title: 'FAST AS\nLIGHTNING',
-        body: "Commercial aircraft typically cruise at speeds of around 575 mph. That's roughly 80% the speed of sound!",
-        side: 'right',
-      },
-      {
-        start: 0.76,
-        end: 0.92,
-        sup: 'Fact #04',
-        title: 'FLIGHT\nTO HEL',
-        body: 'In 2017, on a Friday the 13th, Flight 666 to HEL took off for the last time, before being renumbered.',
-        side: 'left',
-      },
-    ],
-    []
-  );
+  const textContent = [
+    {
+      start: 0.06,
+      end: 0.2,
+      sup: null,
+      title: null,
+      body: 'Hello passengers and welcome aboard. Please sit back, relax, and enjoy the view while we tell you some of our favourite facts about the aviation world.',
+      isIntroText: true,
+      side: 'right',
+    },
+    {
+      start: 0.22,
+      end: 0.38,
+      sup: 'Fact #01',
+      title: 'SKY\nBABIES',
+      body: 'Apart from a crash, the worst nightmare of every flight attendant is childbirth on board. Although extremely rare, nearly 60 babies were born in the sky!',
+      side: 'right',
+    },
+    {
+      start: 0.40,
+      end: 0.56,
+      sup: 'Fact #02',
+      title: 'FORBIDDEN\nNUMBER',
+      body: "Since the number 13 is considered an unlucky number in Western culture, most airlines don't have a row 13 on their planes!",
+      side: 'left',
+    },
+    {
+      start: 0.58,
+      end: 0.74,
+      sup: 'Fact #03',
+      title: 'FAST AS\nLIGHTNING',
+      body: "Commercial aircraft typically cruise at speeds of around 575 mph. That's roughly 80% the speed of sound!",
+      side: 'right',
+    },
+    {
+      start: 0.76,
+      end: 0.92,
+      sup: 'Fact #04',
+      title: 'FLIGHT\nTO HEL',
+      body: 'In 2017, on a Friday the 13th, Flight 666 to HEL took off for the last time, before being renumbered.',
+      side: 'left',
+    },
+  ];
 
   // Pre-compute equalizer bar heights (deterministic)
-  const eqBarHeights = useMemo(
-    () => Array.from({ length: 12 }, (_, i) => 8 + ((i * 7 + 3) % 16)),
-    []
-  );
+  const eqBarHeights = Array.from({ length: 12 }, (_, i) => 8 + ((i * 7 + 3) % 16));
 
   return (
     <div ref={wrapperRef} className="relative h-[600vh]">

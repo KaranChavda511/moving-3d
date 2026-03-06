@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { product } from "@/data/products";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
