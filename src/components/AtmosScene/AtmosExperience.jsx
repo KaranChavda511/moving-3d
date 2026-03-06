@@ -39,7 +39,7 @@ function Sky({ scrollRef }) {
 
   return (
     <mesh ref={meshRef} scale={100}>
-      <sphereGeometry args={[1, 16, 16]} />
+      <sphereGeometry args={[1, 32, 32]} />
       <shaderMaterial
         ref={materialRef}
         side={BackSide}
@@ -321,8 +321,8 @@ export default function AtmosExperience({ scrollRef }) {
   const clouds = [];
 
   // Close clouds — directly around the path, you fly past these
-  for (let i = 0; i < 20; i++) {
-    const t = i / 20;
+  for (let i = 0; i < 30; i++) {
+    const t = i / 30;
     const pointOnPath = curve.getPointAt(t);
 
     // Place on left or right side of path, close but not blocking
@@ -343,8 +343,8 @@ export default function AtmosExperience({ scrollRef }) {
   }
 
   // Mid-distance clouds — further out, fill the sky
-  for (let i = 0; i < 10; i++) {
-    const t = i / 10;
+  for (let i = 0; i < 15; i++) {
+    const t = i / 15;
     const pointOnPath = curve.getPointAt(t);
 
     const side = rng() > 0.5 ? 1 : -1;
@@ -381,9 +381,10 @@ export default function AtmosExperience({ scrollRef }) {
     <>
       <Sky scrollRef={scrollRef} />
 
-      {/* Lighting — kept minimal for perf (2 lights instead of 3) */}
-      <ambientLight intensity={1.4} color="#ccd8ff" />
+      {/* Lighting */}
+      <ambientLight intensity={1.2} color="#ccd8ff" />
       <directionalLight position={[5, 10, -5]} intensity={1.5} color="#ffffff" />
+      <hemisphereLight skyColor="#aabbff" groundColor="#ffd4b0" intensity={0.8} />
 
       {/* Airplane with manual bobbing */}
       <Airplane curve={curve} scrollRef={scrollRef} />
