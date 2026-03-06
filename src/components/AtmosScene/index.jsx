@@ -140,7 +140,7 @@ export default function AtmosScene() {
   return (
     <div ref={wrapperRef} className="relative h-[600vh]">
       {/* Sticky viewport — stays pinned while user scrolls through the tall wrapper */}
-      <div className="sticky top-0 h-screen w-screen overflow-hidden">
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
         {/* 3D Canvas */}
         <Canvas
           className="absolute! inset-0 h-full w-full"
