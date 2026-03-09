@@ -50,7 +50,7 @@ The entire animation loops automatically when the section is visible in the view
 ```
 src/components/AtmosScene/
 ├── TransformSectionLoader.jsx   ← Dynamic import wrapper (13 lines)
-└── TransformSection.jsx         ← All 3D logic (680 lines)
+└── TransformSection.jsx         ← All 3D logic (684 lines)
 ```
 
 ### Why two files?
@@ -171,42 +171,54 @@ These are instantiated as `Three.Color` objects at module level (not inside comp
 
 ```jsx
 const CABLE_POINTS = [
-  new Vector3(-1.6, 0.35, 2.2),   // Start: exits machine (matches machine position)
-  new Vector3(-1.2, 0.18, 1.6),   // Descends, curves inward
-  new Vector3(-0.6, 0.08, 0.9),   // Near floor
-  new Vector3(0.0, 0.14, 0.2),    // Rises at center
-  new Vector3(0.5, 0.10, -0.3),   // Past center
-  new Vector3(1.0, 0.08, -0.8),   // Continuing S-curve
-  new Vector3(1.4, 0.14, -1.2),   // Rises toward logo
-  new Vector3(1.8, 0.20, -1.7),   // Elevated approach
-  new Vector3(2.0, 0.15, -2.1),   // Near logo
-  new Vector3(2.2, 0.05, -2.4),   // Arrives at logo base
+  new Vector3(-2.8, 0.35, 3.5),   // Start: exits machine (matches machine position)
+  new Vector3(-2.4, 0.20, 2.8),   // Descends, curves inward
+  new Vector3(-1.6, 0.10, 1.8),   // Near floor
+  // S-curve: first bend sweeps far right
+  new Vector3(-0.4, 0.06, 1.2),
+  new Vector3(0.8, 0.05, 0.4),
+  new Vector3(1.6, 0.04, -0.2),   // Peak of first S bend (far right)
+  // S-curve: second bend sweeps back left
+  new Vector3(1.0, 0.04, -1.0),
+  new Vector3(0.0, 0.04, -1.8),   // Dip of second S bend (far left)
+  new Vector3(0.6, 0.03, -2.6),
+  new Vector3(1.4, 0.02, -3.2),   // Straightening toward logo
+  new Vector3(2.2, 0.01, -3.6),   // Arrives at left edge of logo
+  new Vector3(2.8, 0.01, -3.8),   // Connects to logo
 ];
 const CABLE_CURVE = new CatmullRomCurve3(CABLE_POINTS);
 ```
 
 ### How CatmullRomCurve3 works:
 
-- Takes an array of control points
+- Takes an array of control points (12 points in this case)
 - Creates a smooth spline that passes **through** each point (unlike Bezier which uses them as handles)
 - The `getPointAt(t)` method returns a position for `t` in [0, 1] uniformly distributed by arc length
 - Used for both the visible tube geometry AND the energy pulse position
 
+### Cable S-curve shape explained:
+
+The cable forms a pronounced **S-curve** across the scene floor, connecting the machine (bottom-left) to the logo (upper-right). The cable approaches the logo from its **left side** (not from below).
+
+**S-curve structure:**
+1. **Exit** (points 0–2): Cable leaves machine, descends toward floor
+2. **First bend** (points 3–5): Sweeps far right to X=1.6, crossing the scene diagonally
+3. **Second bend** (points 6–7): Curves back left to X=0.0, creating the S shape
+4. **Approach** (points 8–11): Sweeps right again, straightening to arrive at logo's left edge
+
 ### Y coordinates explained:
 
-The cable follows an elevated S-curve — it never sits flat on the floor:
+The cable stays close to the floor, gradually descending:
 
 ```
 Y = 0.35 → Cable exits from machine at port height
-Y = 0.18 → Descends but stays above floor
-Y = 0.08 → Lowest point (near floor, avoids z-fighting)
-Y = 0.14 → Rises at scene center (gentle undulation)
-Y = 0.10 → Dips slightly past center
-Y = 0.20 → Rises toward logo (highest mid-cable point)
-Y = 0.05 → Settles at logo base
+Y = 0.20 → Descends but stays above floor
+Y = 0.10 → Approaching floor level
+Y = 0.04–0.06 → S-curve body (very close to floor)
+Y = 0.01–0.03 → Final approach to logo (nearly flat)
 ```
 
-Key difference from a flat cable: the Y values range from 0.05–0.35, creating visible 3D curvature that catches light and shadow.
+Key difference from a flat cable: the Y values range from 0.01–0.35, with the cable mostly hugging the floor while the exit point is elevated at the machine.
 
 ---
 
@@ -325,7 +337,7 @@ function GridLines() { ... }
 The most complex static component. Built from multiple nested meshes:
 
 ```
-Machine group position=[-1.6, 0, 2.2] scale=[1.2, 1.2, 1.2]  (bottom-left of scene)
+Machine group position=[-2.8, 0, 3.5] scale=[1.2, 1.2, 1.2]  (bottom-left of scene)
 ├── Main body (box 0.85 × 0.7 × 0.7) at Y=0.35
 ├── Top plate (thin box) at Y=0.71
 ├── Bottom edge trim (thin box) at Y=0.01
@@ -427,7 +439,7 @@ EnergyPulse
 The most complex animated component.
 
 ```
-LogoShape group position=[2.2, 0.01, -2.4] rotation=[-PI/2, 0, 0]
+LogoShape group position=[3.2, 0.01, -3.8] rotation=[-PI/2, 0, 0]
 ├── Blue chip body (ExtrudeGeometry) ← depth animated
 ├── WM left letter (ExtrudeGeometry) ← depth animated
 ├── WM right letter (ExtrudeGeometry) ← depth animated
@@ -484,7 +496,7 @@ A dynamic `pointLight` that follows the energy pulse:
 | Phase | Position | Intensity |
 |---|---|---|
 | PULSE | Follows cable curve + 0.3 Y offset | 2.5 |
-| EXTRUDE | Fixed at logo position `(2.2, 0.8, -2.4)` | 3.5 (fading) |
+| EXTRUDE | Fixed at logo position `(3.2, 0.8, -3.8)` | 3.5 (fading) |
 | Idle | Anywhere | 0 (off) |
 
 This creates the illusion that the pulse is emitting light onto nearby surfaces.
@@ -504,8 +516,8 @@ function TransformScene() {
       <ambientLight intensity={0.8} color="#c0c0d0" />
       <directionalLight position={[4, 8, 4]} intensity={2.8} color="#e0dcd4" castShadow />
       <directionalLight position={[-3, 5, -2]} intensity={1.2} color="#4466aa" />
-      <pointLight position={[-1.6, 2.5, 3.0]} intensity={1.4} color="#e0d8cc" distance={8} />
-      <pointLight position={[2.6, 1.8, -2.0]} intensity={0.8} color="#5b8aff" distance={7} />
+      <pointLight position={[-2.8, 2.5, 4.0]} intensity={1.4} color="#e0d8cc" distance={10} />
+      <pointLight position={[3.6, 1.8, -3.5]} intensity={0.8} color="#5b8aff" distance={9} />
       <pointLight position={[-2.5, 0.8, 0.0]} intensity={0.6} color="#6a6a80" distance={5} />
       <PulseLight />
 
@@ -537,8 +549,8 @@ function TransformScene() {
 | Ambient `#c0c0d0` | ambientLight | Base fill, ensures nothing is pure black |
 | Directional `[4,8,4]` | directionalLight | Key light — main illumination, casts shadows |
 | Directional `[-3,5,-2]` | directionalLight | Cool blue fill from opposite side |
-| Point `[-1.6,2.5,3.0]` | pointLight | Warm spot on lever (bottom-left) |
-| Point `[2.6,1.8,-2.0]` | pointLight | Blue accent on logo (upper-right) |
+| Point `[-2.8,2.5,4.0]` | pointLight | Warm spot on lever (bottom-left), distance=10 |
+| Point `[3.6,1.8,-3.5]` | pointLight | Blue accent on logo (upper-right), distance=9 |
 | Point `[-2.5,0.8,0.0]` | pointLight | Rim/edge highlight |
 | PulseLight | pointLight (animated) | Follows energy pulse, illuminates logo during extrude |
 
@@ -588,8 +600,8 @@ function CameraRig() {
     else if (aspect < 1.0)  dist = 1.25;  // Tablet portrait
     else                    dist = 1.0;   // Desktop/landscape
 
-    camera.position.set(2.8 * dist, 6.0 * dist, 3.2 * dist);
-    camera.lookAt(0.2, 0.0, 0.1);
+    camera.position.set(3.5 * dist, 7.5 * dist, 4.0 * dist);
+    camera.lookAt(0.2, 0.0, -0.2);
     camera.updateProjectionMatrix();
   }, [camera, size]);
 
@@ -599,28 +611,28 @@ function CameraRig() {
 
 ### Camera position explained:
 
-Base position: `(2.8, 6.0, 3.2)` — high and to the front-right
+Base position: `(3.5, 7.5, 4.0)` — high and to the front-right, pulled back to fit the wider scene
 
 ```
 Top view (Y looking down):
 
          -Z (screen top)
           |
-          |  Logo [2.2, -2.4]
+          |     Logo [3.2, -3.8]
           |
  -X ──────┼────── +X
           |
           |
-   Machine [-1.6, 2.2]
+Machine [-2.8, 3.5]
           |
          +Z (screen bottom)
 
-  Camera at (+2.8, +3.2) in XZ — front-right
+  Camera at (+3.5, +4.0) in XZ — front-right
 ```
 
 ### Why this angle?
 
-- **High Y (6.0)**: Steep top-down view minimizes perspective distortion
+- **High Y (7.5)**: Steep top-down view minimizes perspective distortion — pulled back further than before to fit the wider object spread
 - **FOV 40°**: Wide enough to fit both objects near screen edges
 - **Both objects appear similar size** because the view is near-orthographic
 
@@ -630,11 +642,11 @@ The `dist` multiplier uniformly scales the camera away from origin:
 
 | Viewport | Aspect | dist | Camera Y | Effect |
 |---|---|---|---|---|
-| Desktop (16:9) | 1.78 | 1.0 | 6.0 | Normal framing |
-| Tablet portrait | 0.75 | 1.25 | 7.5 | Pulls back to fit |
-| Phone portrait | 0.5 | 1.5 | 9.0 | Pulls back further |
+| Desktop (16:9) | 1.78 | 1.0 | 7.5 | Normal framing |
+| Tablet portrait | 0.75 | 1.25 | 9.375 | Pulls back to fit |
+| Phone portrait | 0.5 | 1.5 | 11.25 | Pulls back further |
 
-The `lookAt(0.2, 0.0, 0.1)` stays constant — the camera always looks at roughly the scene center regardless of distance.
+The `lookAt(0.2, 0.0, -0.2)` stays constant — the camera always looks at roughly the scene center regardless of distance.
 
 ---
 
@@ -815,24 +827,28 @@ Three.js uses a right-handed coordinate system:
 
 ```
 Screen top (−Z in world)
-┌─────────────────────────────────┐
-│                                 │
-│                    ┌─────┐      │
-│                    │ WM  │      │  Logo at [2.2, -2.4]
-│                    │Logo │      │
-│                    └─────┘      │
-│            ~~~~~~~~~~~~         │
-│       ~~~~~                     │  Cable S-curve (elevated)
-│  ~~~~~                          │
-│  ┌─────────┐                    │
-│  │ Machine │                    │  Machine at [-1.6, 2.2] (1.2x scale)
-│  │  ╔═╗    │                    │
-│  │  ║L║    │                    │  L = Lever
-│  └──╚═╝────┘                    │
-│                                 │
-└─────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│                                          │
+│                           ┌─────┐        │
+│                           │ WM  │        │  Logo at [3.2, -3.8]
+│                           │Logo │        │
+│                      ─────┘─────┘        │  Cable connects from left side
+│                 ~~~~                     │
+│            ~~~~                          │
+│       ~~~~                               │  Cable S-curve (wide, on floor)
+│          ~~~~~                           │
+│               ~~~~~                      │
+│  ┌─────────┐       ~~~~                  │
+│  │ Machine │                             │  Machine at [-2.8, 3.5] (1.2x scale)
+│  │  ╔═╗    │                             │
+│  │  ║L║    │                             │  L = Lever
+│  └──╚═╝────┘                             │
+│                                          │
+└──────────────────────────────────────────┘
 Screen bottom (+Z in world)
 ```
+
+The machine and logo are placed further apart than before (diagonal distance ~9.3 units vs ~6.0 units previously) to give the S-curve cable enough room to form a pronounced shape. The cable connects to the **left side** of the logo, not from below.
 
 ---
 
