@@ -1,5 +1,6 @@
 import AtmosSceneLoader from '@/components/AtmosScene/AtmosSceneLoader';
 import AboutSectionLoader from '@/components/AtmosScene/AboutSectionLoader';
+import TransformSectionLoader from '@/components/AtmosScene/TransformSectionLoader';
 
 export const metadata = {
   title: 'ATMOS — Aviation Facts Experience',
@@ -15,6 +16,9 @@ export default function AtmosPage() {
 
       {/* Normal-flow sections stack naturally below */}
       <AboutSectionLoader />
+
+      {/* 2D → 3D transformation showcase — auto-plays when visible */}
+      <TransformSectionLoader />
 
       {/* Future scroll sections go here — each owns its own scroll progress */}
       {/* <NightFlightSection /> */}
