@@ -159,7 +159,7 @@ PulseLight          → reads to position/intensity of dynamic light
 const BLUE_LIGHT = new Color('#5b8aff');  // Energy pulse, logo emissive
 const BLUE_GLOW  = new Color('#7aa4ff');  // Glow effects, pulse light
 const DARK_METAL = new Color('#45454f');  // Machine body
-const METAL_WARM = new Color('#b8a888');  // Lever arm, handle, feet
+const METAL_WARM = new Color('#9a9ab0');  // Lever arm, handle, feet (cool chrome)
 const METAL_EDGE = new Color('#5a5a66');  // Edge trim, base mount
 ```
 
@@ -171,16 +171,16 @@ These are instantiated as `Three.Color` objects at module level (not inside comp
 
 ```jsx
 const CABLE_POINTS = [
-  new Vector3(-2.0, 0.3, 2.8),    // Start: exits lever machine
-  new Vector3(-1.5, 0.12, 2.1),   // Descends toward floor
-  new Vector3(-0.8, 0.05, 1.0),   // Along floor
-  new Vector3(-0.2, 0.02, 0.2),   // Approaching center
-  new Vector3(0.3, 0.02, -0.5),   // Center of scene
-  new Vector3(0.9, 0.02, -0.7),   // Past center
-  new Vector3(1.4, 0.03, -0.4),   // Slight curve back
-  new Vector3(1.8, 0.04, -1.1),   // Heading to logo
-  new Vector3(2.0, 0.02, -1.9),   // Approaching logo
-  new Vector3(2.2, -0.01, -2.4),  // End: slides under logo
+  new Vector3(-1.6, 0.35, 2.2),   // Start: exits machine (matches machine position)
+  new Vector3(-1.2, 0.18, 1.6),   // Descends, curves inward
+  new Vector3(-0.6, 0.08, 0.9),   // Near floor
+  new Vector3(0.0, 0.14, 0.2),    // Rises at center
+  new Vector3(0.5, 0.10, -0.3),   // Past center
+  new Vector3(1.0, 0.08, -0.8),   // Continuing S-curve
+  new Vector3(1.4, 0.14, -1.2),   // Rises toward logo
+  new Vector3(1.8, 0.20, -1.7),   // Elevated approach
+  new Vector3(2.0, 0.15, -2.1),   // Near logo
+  new Vector3(2.2, 0.05, -2.4),   // Arrives at logo base
 ];
 const CABLE_CURVE = new CatmullRomCurve3(CABLE_POINTS);
 ```
@@ -194,13 +194,19 @@ const CABLE_CURVE = new CatmullRomCurve3(CABLE_POINTS);
 
 ### Y coordinates explained:
 
+The cable follows an elevated S-curve — it never sits flat on the floor:
+
 ```
-Y = 0.3  → Cable exits from machine at port height
-Y = 0.12 → Descends
-Y = 0.05 → Near floor
-Y = 0.02 → Resting on floor (not exactly 0 to avoid z-fighting with grid)
-Y = -0.01 → Slightly below floor to hide under the logo
+Y = 0.35 → Cable exits from machine at port height
+Y = 0.18 → Descends but stays above floor
+Y = 0.08 → Lowest point (near floor, avoids z-fighting)
+Y = 0.14 → Rises at scene center (gentle undulation)
+Y = 0.10 → Dips slightly past center
+Y = 0.20 → Rises toward logo (highest mid-cable point)
+Y = 0.05 → Settles at logo base
 ```
+
+Key difference from a flat cable: the Y values range from 0.05–0.35, creating visible 3D curvature that catches light and shadow.
 
 ---
 
@@ -289,7 +295,7 @@ function GridFloor() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
       <planeGeometry args={[20, 20, 1, 1]} />
-      <meshStandardMaterial color="#18181e" roughness={0.82} metalness={0.2} />
+      <meshStandardMaterial color="#1a1c28" roughness={0.55} metalness={0.45} />
     </mesh>
   );
 }
@@ -297,9 +303,9 @@ function GridFloor() {
 
 - **20x20 unit plane** rotated to lie flat (XZ plane)
 - Positioned at Y=-0.01 (slightly below origin to prevent z-fighting with objects at Y=0)
-- Dark color `#18181e` — barely visible, provides ground reference
+- Dark color `#1a1c28` — dark blue-gray, provides ground reference
 - `receiveShadow` — catches shadows from objects above
-- High roughness (0.82) — matte, non-reflective
+- Roughness 0.55, metalness 0.45 — semi-reflective surface that subtly mirrors scene lighting
 
 ### GridLines
 
@@ -311,7 +317,7 @@ function GridLines() { ... }
 - **Size**: -10 to +10 units in both X and Z
 - **Step**: 0.8 units between lines
 - Each grid line is a `<line>` element with `bufferGeometry` holding 2 vertices
-- Color `#252530` at 45% opacity — subtle, non-distracting
+- Color `#2a2e42` at 35% opacity — subtle blue-gray tint, non-distracting
 - Wrapped in `useMemo(() => ..., [])` — computed once, never recomputed
 
 ### Machine (Lever)
@@ -319,7 +325,7 @@ function GridLines() { ... }
 The most complex static component. Built from multiple nested meshes:
 
 ```
-Machine group position=[-2.0, 0, 2.8]  (bottom-left of scene)
+Machine group position=[-1.6, 0, 2.2] scale=[1.2, 1.2, 1.2]  (bottom-left of scene)
 ├── Main body (box 0.85 × 0.7 × 0.7) at Y=0.35
 ├── Top plate (thin box) at Y=0.71
 ├── Bottom edge trim (thin box) at Y=0.01
@@ -375,23 +381,29 @@ A small sphere on the machine's front face that changes color based on animation
 ```jsx
 function Cable() {
   const tubeGeo = useMemo(
-    () => new TubeGeometry(CABLE_CURVE, 96, 0.065, 10, false),
+    () => new TubeGeometry(CABLE_CURVE, 80, 0.085, 8, false),
     []
   );
   return (
     <mesh geometry={tubeGeo}>
-      <meshStandardMaterial color="#3a3a48" roughness={0.4} metalness={0.6} />
+      <meshStandardMaterial
+        color="#4a4c62"
+        roughness={0.3}
+        metalness={0.7}
+        emissive="#1a1c3a"
+        emissiveIntensity={0.15}
+      />
     </mesh>
   );
 }
 ```
 
 - **TubeGeometry** wraps the CatmullRomCurve3 in a cylindrical tube
-- **96 segments** along the curve length (smoothness)
-- **0.065 radius** — thick enough to be visible from the steep camera angle
-- **10 radial segments** — cross-section polygon resolution
+- **80 segments** along the curve length (smoothness)
+- **0.085 radius** — thicker than before, clearly visible from the steep camera angle
+- **8 radial segments** — cross-section polygon resolution
 - **false** — not closed (tube has open ends)
-- Dark metallic color to look like a power cable
+- Blue-gray metallic color `#4a4c62` with subtle emissive glow (`#1a1c3a` at 0.15 intensity) — gives the cable a faint self-illumination that makes it pop against the dark floor
 
 ### EnergyPulse
 
@@ -599,7 +611,7 @@ Top view (Y looking down):
  -X ──────┼────── +X
           |
           |
-   Lever [-2.0, 2.8]
+   Machine [-1.6, 2.2]
           |
          +Z (screen bottom)
 
@@ -810,10 +822,10 @@ Screen top (−Z in world)
 │                    │Logo │      │
 │                    └─────┘      │
 │            ~~~~~~~~~~~~         │
-│       ~~~~~                     │  Cable S-curve
+│       ~~~~~                     │  Cable S-curve (elevated)
 │  ~~~~~                          │
 │  ┌─────────┐                    │
-│  │ Machine │                    │  Machine at [-2.0, 2.8]
+│  │ Machine │                    │  Machine at [-1.6, 2.2] (1.2x scale)
 │  │  ╔═╗    │                    │
 │  │  ║L║    │                    │  L = Lever
 │  └──╚═╝────┘                    │

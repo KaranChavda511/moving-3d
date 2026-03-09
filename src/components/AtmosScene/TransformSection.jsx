@@ -31,16 +31,20 @@ const METAL_EDGE = new Color('#5a5a66');
 // Cable: lever (bottom-left) → logo (upper-right)
 // Wide S-curve across the scene floor matching reference layout
 const CABLE_POINTS = [
-  new Vector3(-1.6, 0.35, 2.2),   // exit machine (updated position)
-  new Vector3(-1.2, 0.18, 1.6),
-  new Vector3(-0.6, 0.08, 0.9),
-  new Vector3(0.0, 0.14, 0.2),    // rises at center
-  new Vector3(0.5, 0.10, -0.3),
-  new Vector3(1.0, 0.08, -0.8),
-  new Vector3(1.4, 0.14, -1.2),   // rises toward logo
-  new Vector3(1.8, 0.20, -1.7),
-  new Vector3(2.0, 0.15, -2.1),
-  new Vector3(2.2, 0.05, -2.4),   // arrives at logo base
+  new Vector3(-2.8, 0.35, 3.5),   // exit machine
+  new Vector3(-2.4, 0.20, 2.8),
+  new Vector3(-1.6, 0.10, 1.8),
+  // S-curve: first bend sweeps far right
+  new Vector3(-0.4, 0.06, 1.2),
+  new Vector3(0.8, 0.05, 0.4),
+  new Vector3(1.6, 0.04, -0.2),   // peak of first S bend (far right)
+  // S-curve: second bend sweeps back left
+  new Vector3(1.0, 0.04, -1.0),
+  new Vector3(0.0, 0.04, -1.8),   // dip of second S bend (far left)
+  new Vector3(0.6, 0.03, -2.6),
+  new Vector3(1.4, 0.02, -3.2),   // straightening toward logo
+  new Vector3(2.2, 0.01, -3.6),   // arrives at left edge of logo
+  new Vector3(2.8, 0.01, -3.8),   // connects to logo
 ];
 const CABLE_CURVE = new CatmullRomCurve3(CABLE_POINTS);
 
@@ -227,7 +231,7 @@ function Machine() {
   });
 
   return (
-    <group position={[-1.6, 0, 2.2]} scale={[1.2, 1.2, 1.2]}>
+    <group position={[-2.8, 0, 3.5]} scale={[1.2, 1.2, 1.2]}>
       {/* Main body */}
       <mesh position={[0, 0.35, 0]} castShadow>
         <boxGeometry args={[0.85, 0.7, 0.7]} />
@@ -481,7 +485,7 @@ function LogoShape() {
   const wmInitOpts = { depth: 0.017, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.003, bevelSegments: 2 };
 
   return (
-    <group position={[2.2, 0.01, -2.4]} rotation={[-Math.PI / 2, 0, 0]}>
+    <group position={[3.2, 0.01, -3.8]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* Blue rounded chip */}
       <mesh ref={bodyRef} castShadow>
         <extrudeGeometry args={[chipBody, initOpts]} />
@@ -525,7 +529,7 @@ function PulseLight() {
       lightRef.current.position.set(pos.x, pos.y + 0.3, pos.z);
       lightRef.current.intensity = 2.5;
     } else if (p >= PHASE_EXTRUDE[0] && p <= PHASE_SETTLE[1]) {
-      lightRef.current.position.set(2.2, 0.8, -2.4);
+      lightRef.current.position.set(3.2, 0.8, -3.8);
       const g = p <= PHASE_EXTRUDE[1] ? 1 : Math.max(1 - (p - PHASE_SETTLE[0]) / (PHASE_SETTLE[1] - PHASE_SETTLE[0]), 0.3);
       lightRef.current.intensity = 3.5 * g;
     } else {
@@ -549,9 +553,9 @@ function TransformScene() {
       <directionalLight position={[4, 8, 4]} intensity={2.8} color="#e0dcd4" castShadow />
       <directionalLight position={[-3, 5, -2]} intensity={1.2} color="#4466aa" />
       {/* Key light on lever (bottom-left) */}
-      <pointLight position={[-1.6, 2.5, 3.0]} intensity={1.4} color="#e0d8cc" distance={8} />
+      <pointLight position={[-2.8, 2.5, 4.0]} intensity={1.4} color="#e0d8cc" distance={10} />
       {/* Fill light on logo (upper-right) */}
-      <pointLight position={[2.6, 1.8, -2.0]} intensity={0.8} color="#5b8aff" distance={7} />
+      <pointLight position={[3.6, 1.8, -3.5]} intensity={0.8} color="#5b8aff" distance={9} />
       {/* Rim/edge light */}
       <pointLight position={[-2.5, 0.8, 0.0]} intensity={0.6} color="#6a6a80" distance={5} />
 
@@ -599,10 +603,10 @@ function CameraRig() {
     }
 
     // Steep isometric camera — fills screen edge to edge
-    // Lever at (-2.0, 0, 2.8), Logo at (2.2, 0, -2.4)
-    // Camera closer with wider FOV to fill viewport
-    camera.position.set(2.8 * dist, 6.0 * dist, 3.2 * dist);
-    camera.lookAt(0.2, 0.0, 0.1);
+    // Lever at (-2.8, 0, 3.5), Logo at (3.2, 0, -3.8)
+    // Camera pulled back to fit wider scene
+    camera.position.set(3.5 * dist, 7.5 * dist, 4.0 * dist);
+    camera.lookAt(0.2, 0.0, -0.2);
     camera.updateProjectionMatrix();
   }, [camera, size]);
 
