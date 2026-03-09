@@ -28,25 +28,46 @@ const DARK_METAL = new Color('#45454f');
 const METAL_WARM = new Color('#9a9ab0');
 const METAL_EDGE = new Color('#5a5a66');
 
-// Cable: lever (bottom-left) → logo (upper-right)
-// Wide S-curve across the scene floor matching reference layout
-const CABLE_POINTS = [
-  new Vector3(-2.8, 0.35, 3.5),   // exit machine
-  new Vector3(-2.4, 0.20, 2.8),
-  new Vector3(-1.6, 0.10, 1.8),
-  // S-curve: first bend sweeps far right
-  new Vector3(-0.4, 0.06, 1.2),
-  new Vector3(0.8, 0.05, 0.4),
-  new Vector3(1.6, 0.04, -0.2),   // peak of first S bend (far right)
-  // S-curve: second bend sweeps back left
-  new Vector3(1.0, 0.04, -1.0),
-  new Vector3(0.0, 0.04, -1.8),   // dip of second S bend (far left)
-  new Vector3(0.6, 0.03, -2.6),
-  new Vector3(1.4, 0.02, -3.2),   // straightening toward logo
-  new Vector3(2.2, 0.01, -3.6),   // arrives at left edge of logo
-  new Vector3(2.8, 0.01, -3.8),   // connects to logo
-];
-const CABLE_CURVE = new CatmullRomCurve3(CABLE_POINTS);
+/* ─────────────────────────────────────────────
+   Responsive layout store.
+   Positions adapt to viewport — on mobile the
+   machine & logo stack vertically (centered),
+   on desktop they spread diagonally.
+   ───────────────────────────────────────────── */
+const layout = {
+  // Default = desktop positions
+  machine: [-2.8, 0, 3.5],
+  logo: [3.2, 0.01, -3.8],
+  mobile: false,
+};
+
+function buildCablePoints(m, l) {
+  const mx = m[0], mz = m[2], lx = l[0], lz = l[2];
+  // Midpoint and spread
+  const midX = (mx + lx) / 2;
+  const midZ = (mz + lz) / 2;
+  const dx = (lx - mx);
+  const dz = (lz - mz);
+  return [
+    new Vector3(mx, 0.35, mz),
+    new Vector3(mx + dx * 0.1, 0.20, mz + dz * 0.1),
+    new Vector3(mx + dx * 0.2, 0.10, mz + dz * 0.2),
+    // S-curve: first bend sweeps one direction
+    new Vector3(midX + dx * 0.25, 0.06, midZ + dz * 0.1),
+    new Vector3(midX + dx * 0.35, 0.05, midZ - dz * 0.05),
+    new Vector3(midX + dx * 0.3, 0.04, midZ - dz * 0.15),  // peak
+    // S-curve: second bend sweeps back
+    new Vector3(midX - dx * 0.1, 0.04, midZ - dz * 0.1),
+    new Vector3(midX - dx * 0.25, 0.04, midZ + dz * 0.05),  // dip
+    new Vector3(midX - dx * 0.05, 0.03, lz + dz * 0.15),
+    new Vector3(lx - dx * 0.25, 0.02, lz + dz * 0.08),
+    new Vector3(lx - dx * 0.1, 0.01, lz + dz * 0.03),
+    new Vector3(lx - dx * 0.02, 0.01, lz),
+  ];
+}
+
+// Initial cable curve — rebuilt when layout changes
+let cableCurve = new CatmullRomCurve3(buildCablePoints(layout.machine, layout.logo));
 
 // Timeline (0–1): lever → pulse → extrude → settle
 const PHASE_LEVER = [0, 0.08];
@@ -205,10 +226,16 @@ function GridLines() {
    ───────────────────────────────────────────── */
 function Machine() {
   const leverRef = useRef();
+  const groupRef = useRef();
 
   useFrame(() => {
     if (!leverRef.current) return;
     const p = anim.progress;
+
+    // Update position from layout
+    if (groupRef.current) {
+      groupRef.current.position.set(...layout.machine);
+    }
 
     // Lever starts tilted backward (positive X = leaning back)
     // and pulls forward to vertical (0) when activated
@@ -231,7 +258,7 @@ function Machine() {
   });
 
   return (
-    <group position={[-2.8, 0, 3.5]} scale={[1.2, 1.2, 1.2]}>
+    <group ref={groupRef} position={[-2.8, 0, 3.5]} scale={[1.2, 1.2, 1.2]}>
       {/* Main body */}
       <mesh position={[0, 0.35, 0]} castShadow>
         <boxGeometry args={[0.85, 0.7, 0.7]} />
@@ -332,9 +359,24 @@ function StatusLight() {
    Cable / Tube — thicker, heavier looking
    ───────────────────────────────────────────── */
 function Cable() {
-  const tubeGeo = useMemo(() => new TubeGeometry(CABLE_CURVE, 80, 0.085, 8, false), []);
+  const meshRef = useRef();
+  const builtLayout = useRef(null);
+
+  useFrame(() => {
+    if (!meshRef.current) return;
+    // Rebuild tube when layout changes
+    const key = layout.machine.join(',') + '|' + layout.logo.join(',');
+    if (builtLayout.current !== key) {
+      builtLayout.current = key;
+      const oldGeo = meshRef.current.geometry;
+      meshRef.current.geometry = new TubeGeometry(cableCurve, 80, 0.085, 8, false);
+      if (oldGeo) oldGeo.dispose();
+    }
+  });
+
   return (
-    <mesh geometry={tubeGeo}>
+    <mesh ref={meshRef}>
+      <tubeGeometry args={[cableCurve, 80, 0.085, 8, false]} />
       <meshStandardMaterial color="#4a4c62" roughness={0.3} metalness={0.7} emissive="#1a1c3a" emissiveIntensity={0.15} />
     </mesh>
   );
@@ -359,7 +401,7 @@ function EnergyPulse() {
       pulseT = 1;
     }
 
-    const pos = CABLE_CURVE.getPointAt(Math.min(pulseT, 1));
+    const pos = cableCurve.getPointAt(Math.min(pulseT, 1));
     meshRef.current.position.copy(pos);
     meshRef.current.position.y += 0.01;
 
@@ -369,7 +411,7 @@ function EnergyPulse() {
     if (glowRef.current) glowRef.current.visible = visible;
 
     if (trailRef.current && pulseT > 0.02) {
-      const tp = CABLE_CURVE.getPointAt(Math.max(pulseT - 0.04, 0));
+      const tp = cableCurve.getPointAt(Math.max(pulseT - 0.04, 0));
       trailRef.current.position.set(tp.x, tp.y + 0.01, tp.z);
     }
     if (glowRef.current) {
@@ -405,6 +447,7 @@ function LogoShape() {
   const wmLeftRef = useRef();
   const wmRightRef = useRef();
   const glowRef = useRef();
+  const groupRef = useRef();
   const currentDepth = useRef(0.005);
   const lastBuiltDepth = useRef(0.005);
 
@@ -414,6 +457,10 @@ function LogoShape() {
 
   useFrame(() => {
     if (!bodyRef.current) return;
+    // Update position from layout
+    if (groupRef.current) {
+      groupRef.current.position.set(...layout.logo);
+    }
     const p = anim.progress;
 
     let targetDepth = 0.005;
@@ -485,7 +532,7 @@ function LogoShape() {
   const wmInitOpts = { depth: 0.017, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.003, bevelSegments: 2 };
 
   return (
-    <group position={[3.2, 0.01, -3.8]} rotation={[-Math.PI / 2, 0, 0]}>
+    <group ref={groupRef} position={[3.2, 0.01, -3.8]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* Blue rounded chip */}
       <mesh ref={bodyRef} castShadow>
         <extrudeGeometry args={[chipBody, initOpts]} />
@@ -525,11 +572,11 @@ function PulseLight() {
 
     if (p >= PHASE_PULSE[0] && p <= PHASE_PULSE[1]) {
       const t = (p - PHASE_PULSE[0]) / (PHASE_PULSE[1] - PHASE_PULSE[0]);
-      const pos = CABLE_CURVE.getPointAt(Math.min(t, 1));
+      const pos = cableCurve.getPointAt(Math.min(t, 1));
       lightRef.current.position.set(pos.x, pos.y + 0.3, pos.z);
       lightRef.current.intensity = 2.5;
     } else if (p >= PHASE_EXTRUDE[0] && p <= PHASE_SETTLE[1]) {
-      lightRef.current.position.set(3.2, 0.8, -3.8);
+      lightRef.current.position.set(layout.logo[0], 0.8, layout.logo[2]);
       const g = p <= PHASE_EXTRUDE[1] ? 1 : Math.max(1 - (p - PHASE_SETTLE[0]) / (PHASE_SETTLE[1] - PHASE_SETTLE[0]), 0.3);
       lightRef.current.intensity = 3.5 * g;
     } else {
@@ -541,21 +588,43 @@ function PulseLight() {
 }
 
 /* ─────────────────────────────────────────────
+   Responsive Lights — follow layout positions
+   ───────────────────────────────────────────── */
+function ResponsiveLights() {
+  const keyRef = useRef();
+  const fillRef = useRef();
+
+  useFrame(() => {
+    if (keyRef.current) {
+      keyRef.current.position.set(layout.machine[0], 2.5, layout.machine[2] + 0.5);
+    }
+    if (fillRef.current) {
+      fillRef.current.position.set(layout.logo[0] + 0.4, 1.8, layout.logo[2] + 0.3);
+    }
+  });
+
+  return (
+    <>
+      <pointLight ref={keyRef} intensity={1.4} color="#e0d8cc" distance={10} />
+      <pointLight ref={fillRef} intensity={0.8} color="#5b8aff" distance={9} />
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Main 3D Scene
    ───────────────────────────────────────────── */
 function TransformScene() {
   return (
     <>
       <color attach="background" args={['#111116']} />
-      <fog attach="fog" args={['#111116', 10, 24]} />
+      <fog attach="fog" args={['#111116', 12, 30]} />
 
       <ambientLight intensity={0.8} color="#c0c0d0" />
       <directionalLight position={[4, 8, 4]} intensity={2.8} color="#e0dcd4" castShadow />
       <directionalLight position={[-3, 5, -2]} intensity={1.2} color="#4466aa" />
-      {/* Key light on lever (bottom-left) */}
-      <pointLight position={[-2.8, 2.5, 4.0]} intensity={1.4} color="#e0d8cc" distance={10} />
-      {/* Fill light on logo (upper-right) */}
-      <pointLight position={[3.6, 1.8, -3.5]} intensity={0.8} color="#5b8aff" distance={9} />
+      {/* Key / fill lights — positioned by ResponsiveLights */}
+      <ResponsiveLights />
       {/* Rim/edge light */}
       <pointLight position={[-2.5, 0.8, 0.0]} intensity={0.6} color="#6a6a80" distance={5} />
 
@@ -586,29 +655,73 @@ function AnimationController({ isPlaying }) {
 /* ─────────────────────────────────────────────
    Camera Rig — responsive, adapts to viewport
    ───────────────────────────────────────────── */
-function CameraRig() {
-  const { camera, size } = useThree();
+// Module-level camera config — safe to mutate outside React.
+const camCfg = { x: 4.2, y: 9.5, z: 5.0, fov: 40, dirty: true };
 
+function CameraRig() {
+  const { size } = useThree();
+
+  // Compute camera params when viewport changes.
+  // Stored in module-level object (same pattern as `anim`).
   useEffect(() => {
     const aspect = size.width / size.height;
+    const w = size.width;
+    const isMobile = w <= 480 || aspect < 0.6;
+    const isSmallPhone = !isMobile && (w <= 640 || aspect < 0.8);
+    const isTablet = !isMobile && !isSmallPhone && (w <= 768 || aspect < 1.0);
 
-    // Responsive: pull back on narrow viewports
-    let dist;
-    if (aspect < 0.7) {
-      dist = 1.5;
-    } else if (aspect < 1.0) {
-      dist = 1.25;
+    // --- Layout: reposition objects for viewport ---
+    if (isMobile) {
+      // Phone portrait: stack vertically, centered on X
+      layout.machine = [0, 0, 3.0];
+      layout.logo = [0, 0.01, -3.0];
+      layout.mobile = true;
+      camCfg.x = 0.5; camCfg.y = 12.0; camCfg.z = 2.0; camCfg.fov = 50;
+    } else if (isSmallPhone) {
+      layout.machine = [-0.8, 0, 2.8];
+      layout.logo = [0.8, 0.01, -2.8];
+      layout.mobile = true;
+      camCfg.x = 1.2; camCfg.y = 11.0; camCfg.z = 2.5; camCfg.fov = 47;
+    } else if (isTablet) {
+      layout.machine = [-1.8, 0, 3.0];
+      layout.logo = [2.0, 0.01, -3.2];
+      layout.mobile = false;
+      camCfg.x = 2.5; camCfg.y = 11.0; camCfg.z = 3.5; camCfg.fov = 43;
+    } else if (w <= 1024) {
+      layout.machine = [-2.4, 0, 3.2];
+      layout.logo = [2.8, 0.01, -3.5];
+      layout.mobile = false;
+      camCfg.x = 3.5; camCfg.y = 10.0; camCfg.z = 4.2; camCfg.fov = 41;
+    } else if (w <= 1440) {
+      layout.machine = [-2.8, 0, 3.5];
+      layout.logo = [3.2, 0.01, -3.8];
+      layout.mobile = false;
+      camCfg.x = 4.2; camCfg.y = 9.5; camCfg.z = 5.0; camCfg.fov = 40;
     } else {
-      dist = 1.0;
+      layout.machine = [-2.8, 0, 3.5];
+      layout.logo = [3.2, 0.01, -3.8];
+      layout.mobile = false;
+      camCfg.x = 4.0; camCfg.y = 9.0; camCfg.z = 4.8; camCfg.fov = 38;
     }
 
-    // Steep isometric camera — fills screen edge to edge
-    // Lever at (-2.8, 0, 3.5), Logo at (3.2, 0, -3.8)
-    // Camera pulled back to fit wider scene
-    camera.position.set(3.5 * dist, 7.5 * dist, 4.0 * dist);
-    camera.lookAt(0.2, 0.0, -0.2);
+    // Rebuild cable curve for new positions
+    cableCurve = new CatmullRomCurve3(buildCablePoints(layout.machine, layout.logo));
+    camCfg.dirty = true;
+  }, [size]);
+
+  // Apply inside useFrame — avoids React compiler mutation errors.
+  useFrame(({ camera }) => {
+    if (!camCfg.dirty) return;
+    camCfg.dirty = false;
+    const mx = layout.machine[0], mz = layout.machine[2];
+    const lx = layout.logo[0], lz = layout.logo[2];
+    const lookX = (mx + lx) / 2;
+    const lookZ = (mz + lz) / 2;
+    camera.position.set(camCfg.x, camCfg.y, camCfg.z);
+    camera.fov = camCfg.fov;
+    camera.lookAt(lookX, 0.0, lookZ);
     camera.updateProjectionMatrix();
-  }, [camera, size]);
+  });
 
   return null;
 }
@@ -636,7 +749,7 @@ function TransformCanvas({ active }) {
     <div className="h-full w-full">
       {active ? (
         <Canvas
-          camera={{ fov: 40, near: 0.1, far: 50 }}
+          camera={{ fov: 40, near: 0.1, far: 60 }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
           dpr={[1, 1.5]}
           style={{ width: '100%', height: '100%', display: 'block' }}
