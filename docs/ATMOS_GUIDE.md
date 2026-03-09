@@ -2,7 +2,7 @@
 
 ## Complete Developer Guide
 
-A full-screen, scroll-driven 3D animation where a plane flies through clouds along a curved path while the sky transitions from blue to sunset. Text facts appear and disappear as the user scrolls. Built with **only 2 packages** for 3D (`three` + `@react-three/fiber`) and **zero animation libraries** — all DOM animations are vanilla JavaScript.
+A full-screen, scroll-driven 3D animation where a plane flies through clouds along a curved path while the sky transitions from blue to sunset. Text facts appear and disappear as the user scrolls. Below the flight experience, an interactive 3D astronaut model lives in an About section. Built with **3 packages**: `three` + `@react-three/fiber` for 3D and `motion` (Framer Motion) for scroll-driven DOM animations.
 
 ---
 
@@ -13,9 +13,12 @@ A full-screen, scroll-driven 3D animation where a plane flies through clouds alo
 3. [File Structure](#3-file-structure)
 4. [File-by-File Breakdown](#4-file-by-file-breakdown)
    - [page.jsx — Route Entry Point](#41-pagejsx--route-entry-point)
-   - [atmos.css — All Styling](#42-atmoscss--all-styling)
-   - [AtmosScene/index.jsx — Scene Wrapper + Scroll Logic + DOM Overlays](#43-atmossceneindexjsx--scene-wrapper--scroll-logic--dom-overlays)
-   - [AtmosScene/AtmosExperience.jsx — 3D World (Sky, Plane, Clouds, Camera)](#44-atmossceneatmosexperiencejsx--3d-world)
+   - [AtmosSceneLoader.jsx — Dynamic Import Wrapper](#42-atmossceneloaderjsx--dynamic-import-wrapper)
+   - [AboutSectionLoader.jsx — Dynamic Import Wrapper](#43-aboutsectionloaderjsx--dynamic-import-wrapper)
+   - [atmos.module.css — CSS Module Animations](#44-atmosmodulecss--css-module-animations)
+   - [AtmosScene/index.jsx — Scene Wrapper + Scroll Logic + DOM Overlays](#45-atmossceneindexjsx--scene-wrapper--scroll-logic--dom-overlays)
+   - [AtmosScene/AtmosExperience.jsx — 3D World (Sky, Plane, Clouds, Camera)](#46-atmossceneatmosexperiencejsx--3d-world)
+   - [AtmosScene/AboutSection.jsx — Interactive Astronaut 3D Model](#47-atmossceneaboutsectionjsx--interactive-astronaut-3d-model)
 5. [Key Concepts Explained](#5-key-concepts-explained)
    - [What is Canvas?](#51-what-is-canvas)
    - [What is useFrame?](#52-what-is-useframe)
@@ -23,8 +26,9 @@ A full-screen, scroll-driven 3D animation where a plane flies through clouds alo
    - [What is a CatmullRomCurve3?](#54-what-is-a-catmullromcurve3)
    - [What is a ShaderMaterial / GLSL?](#55-what-is-a-shadermaterial--glsl)
    - [What is GLTFLoader?](#56-what-is-gltfloader)
-   - [What is Quaternion Slerp?](#57-what-is-quaternion-slerp)
-   - [What is Lerp?](#58-what-is-lerp)
+   - [What is MeshoptDecoder?](#57-what-is-meshoptdecoder)
+   - [What is Quaternion Slerp?](#58-what-is-quaternion-slerp)
+   - [What is Lerp?](#59-what-is-lerp)
 6. [How Scroll Works](#6-how-scroll-works)
 7. [How the Camera Moves](#7-how-the-camera-moves)
 8. [How the Airplane Works](#8-how-the-airplane-works)
@@ -32,29 +36,31 @@ A full-screen, scroll-driven 3D animation where a plane flies through clouds alo
 10. [How Clouds Work](#10-how-clouds-work)
 11. [How Text Overlays Work](#11-how-text-overlays-work)
 12. [How the Contrail (Trail) Works](#12-how-the-contrail-trail-works)
-13. [Performance Techniques](#13-performance-techniques)
-14. [Customization Guide](#14-customization-guide)
-15. [Common Pitfalls & React Compiler Notes](#15-common-pitfalls--react-compiler-notes)
+13. [How the Astronaut Model Works](#13-how-the-astronaut-model-works)
+14. [Performance Techniques](#14-performance-techniques)
+15. [Customization Guide](#15-customization-guide)
+16. [Common Pitfalls & React Compiler Notes](#16-common-pitfalls--react-compiler-notes)
 
 ---
 
 ## 1. How It Works (Big Picture)
 
 ```
-User scrolls (mouse wheel / touch drag)
+User scrolls natively (the wrapper is 600vh tall with a sticky viewport)
         │
         ▼
-scrollProgress: 0.0 ──────────────────► 1.0
+scrollYProgress: 0.0 ──────────────────► 1.0   (Framer Motion useScroll)
         │
+        ├── useMotionValueEvent bridges to scrollRef for Three.js
         ├── Camera moves along a 3D curved path (CatmullRomCurve3)
         ├── Airplane stays fixed in front of camera, tilts into curves
         ├── Sky color transitions: Blue → Purple → Sunset → Warm → Pink
         ├── Cloud colors tint to match the sky
-        ├── Text facts fade in/out with depth scaling effect
-        └── SVG contrail line grows downward from the plane
+        ├── Text facts fade in/out via useTransform (opacity/scale/y)
+        └── SVG contrail line grows downward (motion.line)
 ```
 
-The entire experience is driven by a single number: `scrollProgress` (0 to 1). Every visual element reads this number and reacts to it.
+The entire flight experience is driven by a single MotionValue: `scrollYProgress` (0 to 1). Every visual element reads this value and reacts to it. Below the flight section, the AboutSection renders an interactive 3D astronaut in a tablet mockup.
 
 ---
 
@@ -62,17 +68,16 @@ The entire experience is driven by a single number: `scrollProgress` (0 to 1). E
 
 | Package | What It Does | Why We Need It |
 |---------|-------------|----------------|
-| `three` | The 3D engine (WebGL). Provides Vector3, Quaternion, CatmullRomCurve3, ShaderMaterial, GLTFLoader, etc. | **Core 3D math and rendering engine.** Everything 3D depends on this. |
-| `@react-three/fiber` | React renderer for Three.js. Lets you write Three.js scenes using JSX (`<mesh>`, `<sphereGeometry>`, etc.) instead of imperative code. | **Bridges React and Three.js.** Provides `<Canvas>`, `useFrame` (animation loop), `useThree` (camera access). |
-
-**That's it. Only 2 packages for the entire 3D experience.**
+| `three` | The 3D engine (WebGL). Provides Vector3, Quaternion, CatmullRomCurve3, ShaderMaterial, GLTFLoader, MeshoptDecoder, etc. | **Core 3D math and rendering engine.** Everything 3D depends on this. |
+| `@react-three/fiber` | React renderer for Three.js. Lets you write Three.js scenes using JSX (`<mesh>`, `<sphereGeometry>`, etc.) instead of imperative code. | **Bridges React and Three.js.** Provides `<Canvas>`, `useFrame` (animation loop), `useThree` (camera access), `useLoader`. |
+| `motion` | Framer Motion for React. Provides `useScroll`, `useTransform`, `useMotionValueEvent`, and `motion.*` animated components. | **Scroll-driven DOM animations.** Tracks native scroll progress and creates derived opacity/scale/position values for text overlays, intro, contrail. |
 
 ### What We Don't Use (and why)
 
 | Not Used | What It Would Do | Why We Skipped It |
 |----------|-----------------|-------------------|
-| `@react-three/drei` | Helper components (Float, useGLTF, Clouds, Sky, etc.) | Replaced with manual code: sin-wave bobbing, direct GLTFLoader, custom sphere clouds, GLSL sky shader. Fewer deps = smaller bundle. |
-| `gsap` | Animation library | Replaced with vanilla `el.style.transform` and `el.style.opacity`. Only 3 lines of JS needed. |
+| `@react-three/drei` | Helper components (Float, useGLTF, Clouds, Sky, etc.) | Replaced with manual code: sin-wave bobbing, direct GLTFLoader, Cloud.glb models, GLSL sky shader. Fewer deps = smaller bundle. |
+| `gsap` | Animation library | Framer Motion's `useTransform` handles all DOM animations declaratively. |
 | `@react-three/postprocessing` | Bloom, vignette, etc. | Crashed WebGL context with React 19. Not needed for this effect. |
 
 ---
@@ -83,15 +88,21 @@ The entire experience is driven by a single number: `scrollProgress` (0 to 1). E
 src/
 ├── app/
 │   └── atmos/
-│       ├── page.jsx              ← Route entry point (Next.js)
-│       └── atmos.css             ← All CSS for the page
+│       └── page.jsx                    ← Route entry point (Next.js, server component)
 ├── components/
 │   └── AtmosScene/
-│       ├── index.jsx             ← Canvas + scroll logic + DOM overlays
-│       └── AtmosExperience.jsx   ← 3D scene (sky, plane, clouds, camera)
+│       ├── index.jsx                   ← Canvas + scroll logic + DOM overlays
+│       ├── AtmosExperience.jsx         ← 3D scene (sky, plane, clouds, camera)
+│       ├── AboutSection.jsx            ← Interactive 3D astronaut model section
+│       ├── AtmosSceneLoader.jsx        ← Dynamic import wrapper (ssr: false)
+│       ├── AboutSectionLoader.jsx      ← Dynamic import wrapper (ssr: false)
+│       └── atmos.module.css            ← CSS animations (equalizer, letter intro, bounce)
 public/
 └── models/
-    └── Airplane.glb              ← 3D airplane model (231KB)
+    ├── Airplane.glb                    ← 3D airplane model (236KB)
+    ├── Cloud.glb                       ← 3D cloud model (619KB)
+    ├── astronaut.glb                   ← Compressed astronaut model (1.36MB, meshopt)
+    └── astronaut-original.glb          ← Original astronaut model (19.5MB, backup)
 ```
 
 ---
@@ -103,21 +114,21 @@ public/
 **File:** `src/app/atmos/page.jsx`
 
 ```jsx
-'use client';
+import AtmosSceneLoader from '@/components/AtmosScene/AtmosSceneLoader';
+import AboutSectionLoader from '@/components/AtmosScene/AboutSectionLoader';
 
-import dynamic from 'next/dynamic';
-import './atmos.css';
-
-const AtmosScene = dynamic(() => import('@/components/AtmosScene'), {
-  ssr: false,
-  loading: () => <div className="atmos-loading">Loading Experience...</div>,
-});
+export const metadata = {
+  title: 'ATMOS — Aviation Facts Experience',
+  description:
+    'An immersive scroll-driven 3D flight experience through the clouds, featuring fascinating aviation facts.',
+};
 
 export default function AtmosPage() {
   return (
-    <div className="atmos-wrapper">
-      <AtmosScene />
-    </div>
+    <main>
+      <AtmosSceneLoader />
+      <AboutSectionLoader />
+    </main>
   );
 }
 ```
@@ -126,64 +137,73 @@ export default function AtmosPage() {
 
 | Code | Purpose |
 |------|---------|
-| `'use client'` | Tells Next.js this is a client-side component (needed for browser APIs like WebGL) |
-| `dynamic(..., { ssr: false })` | **Critical:** Loads `AtmosScene` only in the browser, never on the server. Three.js/WebGL crash on the server because there's no `window` or `document`. |
-| `loading: () => <div>...` | Shows "Loading Experience..." while the 3D code downloads |
-| `import './atmos.css'` | Loads all CSS for the page |
-| `<div className="atmos-wrapper">` | Full-screen container (`100vw × 100vh`, `overflow: hidden`) |
-
-**Why `ssr: false` is required:** Three.js tries to access `window`, `document`, and WebGL APIs that don't exist on the server. Without `ssr: false`, the build would crash.
+| No `'use client'` | This is a **server component** — only the loader children are client components |
+| `export const metadata` | Next.js page metadata for SEO (title, description) |
+| `<AtmosSceneLoader />` | Dynamically imports the 3D flight scene with `ssr: false` |
+| `<AboutSectionLoader />` | Dynamically imports the astronaut About section with `ssr: false` |
+| `<main>` wrapping | Sections stack naturally in normal document flow |
 
 ---
 
-### 4.2. `atmos.css` — All Styling
+### 4.2. `AtmosSceneLoader.jsx` — Dynamic Import Wrapper
 
-**File:** `src/app/atmos/atmos.css`
+**File:** `src/components/AtmosScene/AtmosSceneLoader.jsx`
 
-Key sections:
+```jsx
+'use client';
 
-#### Container Setup
-```css
-.atmos-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
+import dynamic from 'next/dynamic';
 
-.atmos-container canvas {
-  position: absolute !important;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-}
-```
-The Canvas fills the entire screen. `!important` overrides React Three Fiber's default inline styles.
+const AtmosScene = dynamic(() => import('@/components/AtmosScene'), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse text-2xl text-white">
+      Loading Experience...
+    </div>
+  ),
+});
 
-#### Text Overlays
-```css
-.atmos-text-overlay {
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);    /* vertically centered */
-  z-index: 15;                     /* above canvas (z-index 0), below header (z-index 30) */
-  pointer-events: none;            /* clicks pass through to canvas */
-  will-change: opacity;            /* GPU hint for smooth animation */
-}
-
-.atmos-text-overlay.text-right {
-  right: 5%;                       /* anchored to right edge */
-}
-
-.atmos-text-overlay.text-left {
-  left: 5%;                        /* anchored to left edge */
+export default function AtmosSceneLoader() {
+  return <AtmosScene />;
 }
 ```
 
-#### Equalizer Animation (Header)
+**Why a separate loader?** The `'use client'` + `dynamic()` call must happen in a client component, but `page.jsx` is a server component (to support `export const metadata`). Extracting the dynamic import into a loader keeps the page clean.
+
+**Why `ssr: false`?** Three.js tries to access `window`, `document`, and WebGL APIs that don't exist on the server. Without `ssr: false`, the build would crash.
+
+---
+
+### 4.3. `AboutSectionLoader.jsx` — Dynamic Import Wrapper
+
+**File:** `src/components/AtmosScene/AboutSectionLoader.jsx`
+
+```jsx
+'use client';
+
+import dynamic from 'next/dynamic';
+
+const AboutSection = dynamic(() => import('@/components/AtmosScene/AboutSection'), {
+  ssr: false,
+  loading: () => <div className="min-h-screen bg-[#eef0f4]" />,
+});
+
+export default function AboutSectionLoader() {
+  return <AboutSection />;
+}
+```
+
+Same pattern as `AtmosSceneLoader`. The loading fallback renders a placeholder div matching the section's background color.
+
+---
+
+### 4.4. `atmos.module.css` — CSS Module Animations
+
+**File:** `src/components/AtmosScene/atmos.module.css`
+
 ```css
-.eq-bar {
-  width: 2px;
-  background: white;
+/* Equalizer bar bounce */
+.eqBar {
   animation: eqBounce 0.8s ease-in-out infinite alternate;
 }
 
@@ -191,162 +211,198 @@ The Canvas fills the entire screen. `!important` overrides React Three Fiber's d
   0%   { transform: scaleY(0.3); }
   100% { transform: scaleY(1); }
 }
-```
-12 tiny bars with staggered `animation-delay` create a music equalizer effect.
 
-#### Letter-by-Letter Title Animation
-```css
-.atmos-intro h1 span {
+/* Intro letter fade-in */
+.introLetter {
   display: inline-block;
   animation: fadeInLetter 0.8s ease-out backwards;
 }
-.atmos-intro h1 span:nth-child(1) { animation-delay: 0s; }
-.atmos-intro h1 span:nth-child(2) { animation-delay: 0.1s; }
-/* ... etc for A, T, M, O, S */
+
+@keyframes fadeInLetter {
+  from { opacity: 0; transform: translateY(-30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll hint bounce */
+.scrollHint {
+  animation: bounceHint 2s ease-in-out infinite;
+}
+
+@keyframes bounceHint {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-15px); }
+}
+
+/* Loading pulse */
+.loading {
+  animation: pulse 2s ease-in-out infinite;
+}
 ```
-Each letter of "ATMOS" fades in with a 0.1s stagger.
+
+This is a **CSS Module** (`.module.css`), so class names are locally scoped and imported as `styles.eqBar`, `styles.introLetter`, etc. All layout and positioning uses Tailwind utility classes inline.
 
 ---
 
-### 4.3. `AtmosScene/index.jsx` — Scene Wrapper + Scroll Logic + DOM Overlays
+### 4.5. `AtmosScene/index.jsx` — Scene Wrapper + Scroll Logic + DOM Overlays
 
 **File:** `src/components/AtmosScene/index.jsx`
 
-This file handles everything that is **NOT 3D**: scroll input, text animations, the header, the contrail SVG, and the Canvas wrapper.
+This file handles everything that is **NOT 3D**: scroll tracking, text overlays, the header, the contrail SVG, and the Canvas wrapper.
 
-#### State & Refs
-
-```jsx
-const [scrollProgress, setScrollProgress] = useState(0);  // 0 to 1, drives everything
-const [showIntro, setShowIntro] = useState(true);          // "ATMOS" title visible?
-const [showHint, setShowHint] = useState(true);            // "Scroll to begin" visible?
-const targetScroll = useRef(0);        // where scroll WANTS to be (instant)
-const currentScroll = useRef(0);       // where scroll IS (smoothed via lerp)
-const textRefs = useRef([]);           // DOM elements for text overlays
-const touchStartY = useRef(0);        // touch position tracking for mobile
-```
-
-**Why two scroll values?** `targetScroll` jumps instantly when the user scrolls. `currentScroll` chases it smoothly via lerp. This creates the buttery-smooth scroll feel.
-
-#### Scroll Input Handling
+#### Imports
 
 ```jsx
-// Desktop: Mouse wheel
-const handleWheel = (e) => {
-  e.preventDefault();
-  const rawDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 50);
-  const delta = rawDelta * 0.00008;
-  targetScroll.current = Math.max(0, Math.min(1, targetScroll.current + delta));
-};
-
-// Mobile: Touch drag
-const handleTouchMove = (e) => {
-  e.preventDefault();
-  const touchY = e.touches[0].clientY;
-  const deltaY = touchStartY.current - touchY;
-  touchStartY.current = touchY;
-  const delta = deltaY * 0.0004;
-  targetScroll.current = Math.max(0, Math.min(1, targetScroll.current + delta));
-};
+import { Canvas } from '@react-three/fiber';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform, useMotionValueEvent } from 'motion/react';
+import AtmosExperience from './AtmosExperience';
+import styles from './atmos.module.css';
 ```
 
-- `e.preventDefault()` stops the browser from actually scrolling the page
-- `Math.min(Math.abs(e.deltaY), 50)` caps the maximum scroll speed (prevents trackpad fast-flicks)
-- `* 0.00008` is the scroll sensitivity — smaller = slower scrolling
-- `Math.max(0, Math.min(1, ...))` clamps progress to 0–1 range
+| Import | From | Purpose |
+|--------|------|---------|
+| `Canvas` | @react-three/fiber | Creates the WebGL `<canvas>` element and 3D scene |
+| `useRef` | React | Mutable ref to bridge MotionValue → Three.js |
+| `useScroll` | motion/react | Tracks native scroll progress of the wrapper element |
+| `useTransform` | motion/react | Creates derived MotionValues (opacity, scale, y) from scroll progress |
+| `useMotionValueEvent` | motion/react | Subscribes to MotionValue changes without re-renders |
+| `motion` | motion/react | Animated component wrappers (`motion.div`, `motion.line`) |
+| `styles` | CSS Module | Locally-scoped animation classes |
 
-#### The Animation Loop (requestAnimationFrame)
+#### Scroll Setup
 
 ```jsx
-const smoothScroll = () => {
-  // Smooth the scroll (lerp = linear interpolation)
-  currentScroll.current = lerp(currentScroll.current, targetScroll.current, 0.04);
-  setScrollProgress(currentScroll.current);  // triggers React re-render → updates 3D
+const wrapperRef = useRef(null);
+// scrollYProgress: 0 at top of wrapper, 1 at bottom — driven by native scroll
+const { scrollYProgress } = useScroll({
+  target: wrapperRef,
+  offset: ['start start', 'end end'],
+});
 
-  // Hide intro after scrolling starts
-  if (currentScroll.current > 0.02 && showIntro) {
-    setShowIntro(false);
-    setShowHint(false);
-  }
-
-  // Animate text overlays (vanilla JS, no library needed)
-  textContent.forEach((text, index) => {
-    const el = textRefs.current[index];
-    if (!el) return;
-
-    const diff = currentScroll.current - text.progress;
-    const absDiff = Math.abs(diff);
-    const visibility = Math.max(0, 1 - absDiff * 16);
-
-    let scale, opacity;
-    if (diff < 0) {
-      // Approaching: starts small (0.3), grows to full size (1.0)
-      scale = 0.3 + visibility * 0.7;
-      opacity = visibility;
-    } else {
-      // Passing: grows beyond 1.0 and fades out
-      scale = 1.0 + diff * 6;
-      opacity = visibility;
-    }
-
-    // Direct DOM style manipulation (GPU-accelerated via transform)
-    el.style.opacity = opacity;
-    el.style.transform = `translateY(-50%) scale(${scale})`;
-    el.style.visibility = opacity < 0.01 ? 'hidden' : 'visible';
-  });
-
-  requestAnimationFrame(smoothScroll);  // loop forever at ~60fps
-};
+// Bridge MotionValue → plain number ref for Three.js useFrame
+const scrollRef = useRef(0);
+useMotionValueEvent(scrollYProgress, 'change', (v) => {
+  scrollRef.current = v;
+});
 ```
 
-**Why vanilla JS instead of React state for text animations?** Setting React state 60 times per second would trigger 60 re-renders per second, re-rendering the entire component tree. Direct `el.style` manipulation bypasses React and goes straight to the GPU — much faster.
+**Why `useMotionValueEvent`?** MotionValues don't trigger React re-renders (they're external to React state). `useMotionValueEvent` lets us subscribe to changes and write the value to a plain ref that Three.js `useFrame` can read every frame — no re-renders needed.
+
+#### Derived Animations
+
+```jsx
+// Intro/hint visibility — fade out as user starts scrolling
+const introOpacity = useTransform(scrollYProgress, [0, 0.02], [1, 0]);
+const hintOpacity = useTransform(scrollYProgress, [0, 0.015], [1, 0]);
+
+// Contrail line length — grows from y=48 to y=100 as user scrolls
+const trailY2 = useTransform(scrollYProgress, [0, 1], [48, 100]);
+```
+
+`useTransform` maps an input MotionValue to an output range. For example, `introOpacity` is 1 when scroll is 0 and fades to 0 by the time scroll reaches 0.02.
+
+#### TextOverlay Component
+
+```jsx
+function TextOverlay({ text, start, end, scrollYProgress }) {
+  const opacity = useTransform(
+    scrollYProgress,
+    [start, start + 0.03, end - 0.03, end],
+    [0, 1, 1, 0]
+  );
+  const scale = useTransform(
+    scrollYProgress,
+    [start, start + 0.03, end - 0.03, end],
+    [0.85, 1, 1, 1.1]
+  );
+  const y = useTransform(
+    scrollYProgress,
+    [start, start + 0.03, end - 0.03, end],
+    [30, 0, 0, -20]
+  );
+
+  return (
+    <motion.div style={{ opacity, scale, y, ... }}>
+      {/* text content */}
+    </motion.div>
+  );
+}
+```
+
+Each text overlay has a `start` and `end` scroll range. The 4-keyframe pattern creates:
+- **Fade in** (start → start+0.03): opacity 0→1, scale 0.85→1, y 30→0
+- **Visible** (start+0.03 → end-0.03): fully visible, stationary
+- **Fade out** (end-0.03 → end): opacity 1→0, scale 1→1.1, y 0→-20
+
+#### Text Content Array
+
+```jsx
+const textContent = [
+  {
+    start: 0.06, end: 0.2,
+    sup: null, title: null,
+    body: 'Hello passengers and welcome aboard...',
+    isIntroText: true, side: 'right',
+  },
+  {
+    start: 0.22, end: 0.38,
+    sup: 'Fact #01', title: 'SKY\nBABIES',
+    body: 'Apart from a crash, the worst nightmare...',
+    side: 'right',
+  },
+  // ... 3 more facts at ranges 0.40-0.56, 0.58-0.74, 0.76-0.92
+];
+```
 
 #### The Canvas
 
 ```jsx
 <Canvas
+  className="absolute! inset-0 z-0 h-full w-full"
   camera={{ position: [0, 0, 0], fov: 75 }}
-  gl={{ antialias: true }}
-  onCreated={({ gl }) => { gl.setClearColor('#1a2fa0'); }}
+  gl={{ antialias: true, powerPreference: 'high-performance' }}
+  dpr={[1, 1.5]}
+  onCreated={({ gl }) => {
+    gl.setClearColor('#1a2fa0');
+  }}
 >
-  <AtmosExperience scrollProgress={scrollProgress} />
+  <AtmosExperience scrollRef={scrollRef} />
 </Canvas>
 ```
 
 | Prop | What It Does |
 |------|-------------|
 | `camera={{ position: [0, 0, 0], fov: 75 }}` | Initial camera at origin, 75° field of view (wide angle) |
-| `gl={{ antialias: true }}` | Smooth edges on 3D geometry (no jagged lines) |
+| `gl={{ antialias: true, powerPreference: 'high-performance' }}` | Smooth edges + request dedicated GPU |
+| `dpr={[1, 1.5]}` | Clamp device pixel ratio (avoids rendering at full 2x/3x retina) |
 | `onCreated={...setClearColor}` | Sets background color before first render (matches sky blue) |
-| `scrollProgress={scrollProgress}` | Passes the scroll value into the 3D world |
-
-**What is `<Canvas>`?**
-It creates a `<canvas>` HTML element and sets up:
-- A WebGL renderer (draws 3D graphics)
-- A scene graph (tree of 3D objects)
-- A camera (your viewpoint)
-- An animation loop (60fps render cycle)
-
-Everything inside `<Canvas>` lives in 3D space. Everything outside (text, header, SVG) is normal HTML/CSS.
+| `scrollRef={scrollRef}` | Passes the scroll ref into the 3D world (not React state — avoids re-renders) |
 
 #### The Contrail SVG
 
 ```jsx
-<svg className="contrail-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-  <line
+<svg className="pointer-events-none absolute inset-0 z-8 h-full w-full"
+     viewBox="0 0 100 100" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="trailGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+      <stop offset="60%" stopColor="white" stopOpacity="0.5" />
+      <stop offset="100%" stopColor="white" stopOpacity="0" />
+    </linearGradient>
+  </defs>
+  <motion.line
     x1="50" y1="48"
-    x2="50" y2={48 + scrollProgress * 52}
-    stroke="url(#trailGrad)"
-    strokeWidth="0.6"
+    x2="50" y2={trailY2}
+    stroke="url(#trailGrad)" strokeWidth="0.6"
   />
 </svg>
 ```
 
-A vertical white line that starts at the plane's screen position (x=50%, y=48%) and grows downward as you scroll. Uses a gradient that fades from white to transparent. `preserveAspectRatio="none"` stretches the SVG to fill the screen.
+Uses `motion.line` so the `y2` attribute is animated by the `trailY2` MotionValue without React re-renders. The gradient fades from white to transparent, creating a vapor trail effect.
 
 ---
 
-### 4.4. `AtmosScene/AtmosExperience.jsx` — 3D World
+### 4.6. `AtmosScene/AtmosExperience.jsx` — 3D World
 
 **File:** `src/components/AtmosScene/AtmosExperience.jsx`
 
@@ -355,20 +411,21 @@ This file contains all 3D logic: sky, clouds, airplane, camera movement.
 #### Imports
 
 ```jsx
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
+import {
+  BackSide, Box3, CatmullRomCurve3, Color,
+  PerspectiveCamera, Quaternion, Vector3,
+} from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 ```
 
 | Import | From | Purpose |
 |--------|------|---------|
-| `useRef` | React | Mutable values that persist across renders (refs to 3D objects) |
-| `useMemo` | React | Cache expensive calculations (curve, cloud positions) |
-| `useEffect` | React | Load the GLB model on mount |
-| `useFrame` | @react-three/fiber | Runs a callback every frame (~60fps). This is the 3D animation loop. |
-| `useThree` | @react-three/fiber | Access the camera, renderer, scene, etc. |
-| `THREE` | three | All 3D math: Vector3, Quaternion, Color, Box3, CatmullRomCurve3, ShaderMaterial, etc. |
+| `useRef, useEffect` | React | Mutable refs and model loading on mount |
+| `useFrame` | @react-three/fiber | Runs a callback every frame (~60fps) — the 3D animation loop |
+| `useThree` | @react-three/fiber | Access the camera object |
+| `BackSide, Box3, ...` | three | Individual Three.js classes (tree-shakeable, smaller than `import * as THREE`) |
 | `GLTFLoader` | three/examples | Loads `.glb`/`.gltf` 3D model files |
 
 #### Seeded Random Number Generator
@@ -383,11 +440,11 @@ function seededRandom(seed) {
 }
 ```
 
-**Why not `Math.random()`?** The React Compiler forbids `Math.random()` inside `useMemo` because it's not pure (returns different values each call). A seeded PRNG with the same seed (42) always produces the same sequence, so cloud positions are deterministic and the compiler is happy.
+**Why not `Math.random()`?** The React Compiler forbids `Math.random()` inside render because it's not pure (returns different values each call). A seeded PRNG with the same seed (42) always produces the same sequence, so cloud positions are deterministic.
 
 #### Sky Component
 
-The sky is a huge sphere (scale=100) with the camera inside it. It uses a custom GLSL shader that transitions through 5 color phases based on `scrollProgress`:
+The sky is a huge sphere (scale=100) with the camera inside it. It uses a custom GLSL shader that transitions through 5 color phases based on scroll progress:
 
 ```
 Phase 1: 0.0 – 0.2  → Blue to Deeper Blue
@@ -397,27 +454,110 @@ Phase 4: 0.65 – 0.85 → Orange to Pink
 Phase 5: 0.85 – 1.0  → Stays Pink
 ```
 
-Each phase has a `topColor` and `botColor`. The shader interpolates vertically between them using the sphere's Y position, creating a sky gradient.
+Each phase has a `topColor` and `botColor`. The shader interpolates vertically between them using the sphere's Y position, creating a sky gradient. The sphere rotates slowly (0.0001 rad/frame) for subtle movement.
 
-Key detail: `side={THREE.BackSide}` — renders the inside of the sphere (since the camera is inside it).
+Key detail: `side={BackSide}` — renders the inside of the sphere (since the camera is inside it).
+
+**Uniforms:**
+- `uProgress` — scroll progress (0–1), controls which color phase is active
+- `uTime` — elapsed time from `state.clock.elapsedTime` (available for future effects)
+
+#### Cloud Model Caching System
+
+Clouds use **3D `.glb` models** (not procedural spheres). The model is loaded once and cloned for each instance using a module-level cache with reference counting:
+
+```jsx
+let _cloudModelCache = null;
+let _cloudModelLoading = false;
+const _cloudModelCallbacks = [];
+let _cloudModelRefCount = 0;
+
+function loadCloudModel(callback) {
+  _cloudModelRefCount++;
+  if (_cloudModelCache) {
+    callback(_cloudModelCache);
+    return;
+  }
+  _cloudModelCallbacks.push(callback);
+  if (_cloudModelLoading) return;
+  _cloudModelLoading = true;
+  const loader = new GLTFLoader();
+  loader.load('/models/Cloud.glb', (gltf) => {
+    // Auto-scale to ~1 unit
+    const box = new Box3().setFromObject(gltf.scene);
+    // ... normalize scale ...
+    _cloudModelCache = gltf.scene;
+    _cloudModelCallbacks.forEach((cb) => cb(gltf.scene));
+    _cloudModelCallbacks.length = 0;
+  });
+}
+
+function releaseCloudModel() {
+  _cloudModelRefCount--;
+  if (_cloudModelRefCount <= 0 && _cloudModelCache) {
+    // Dispose all geometry and materials to free GPU memory
+    _cloudModelCache.traverse((child) => {
+      if (child.isMesh) {
+        child.geometry?.dispose();
+        // ... dispose materials ...
+      }
+    });
+    _cloudModelCache = null;
+    _cloudModelLoading = false;
+  }
+}
+```
+
+**Why reference counting?** 45 CloudMesh components each call `loadCloudModel()`. The first call triggers the actual HTTP request; the rest get the cached model instantly. When all CloudMesh components unmount, `releaseCloudModel()` counts down to zero and disposes GPU resources.
 
 #### CloudMesh Component
 
-Each cloud is a group of 5 overlapping spheres at slightly different positions and sizes:
+```jsx
+function CloudMesh({ position, scale = 1, scrollRef }) {
+  const groupRef = useRef();
+  const materialsRef = useRef([]);
+  const targetColor = new Color();
 
+  const getCloudColor = (progress) => {
+    if (progress < 0.25) return targetColor.setRGB(0.92, 0.92, 0.98);  // white
+    if (progress < 0.45) return targetColor.setRGB(0.78, 0.72, 0.88);  // soft purple
+    if (progress < 0.65) return targetColor.setRGB(0.85, 0.75, 0.78);  // peachy rose
+    if (progress < 0.80) return targetColor.setRGB(0.92, 0.82, 0.75);  // warm beige
+    return targetColor.setRGB(0.95, 0.88, 0.85);                       // off-white
+  };
+
+  useEffect(() => {
+    loadCloudModel((original) => {
+      const clone = original.clone(true);
+      // Clone materials so each cloud can tint independently
+      clone.traverse((child) => {
+        if (child.isMesh) {
+          child.material = child.material.clone();
+          child.material.transparent = true;
+          child.material.opacity = 0.9;
+          child.material.roughness = 1;
+          materialsRef.current.push(child.material);
+        }
+      });
+      groupRef.current.add(clone);
+    });
+    return () => {
+      // Cleanup: dispose cloned materials, release cached model
+      materialsRef.current.forEach((mat) => mat.dispose());
+      releaseCloudModel();
+    };
+  }, []);
+
+  useFrame(() => {
+    const color = getCloudColor(scrollRef.current);
+    materialsRef.current.forEach((mat) => {
+      mat.color.lerp(color, 0.05);  // smooth 5% blend per frame
+    });
+  });
+
+  return <group ref={groupRef} position={position} scale={scale} />;
+}
 ```
-    ○ (0.35r)   ○ (0.4r)
-  ○ (0.45r)  ○ (0.6r)  ○ (0.5r)
-```
-
-This creates an organic, lumpy cloud shape. Each sphere has:
-- `meshStandardMaterial` — responds to lighting
-- `transparent opacity={0.8-0.9}` — semi-transparent
-- `roughness={1}` — matte, non-shiny surface
-
-Cloud color tints with the sky: white → purple → warm → pink. The `lerp(color, 0.05)` in `useFrame` creates a smooth color transition (5% per frame).
-
-Sphere segments are 12×12 (reduced from 16×16 for performance — 45 clouds × 5 spheres = 225 meshes).
 
 #### Airplane Component
 
@@ -431,20 +571,28 @@ The airplane:
 **Model Loading (useEffect):**
 ```jsx
 useEffect(() => {
+  const container = modelContainerRef.current;
   const loader = new GLTFLoader();
   loader.load('/models/Airplane.glb', (gltf) => {
     const scene = gltf.scene;
     // Calculate bounding box to auto-scale
-    const box = new THREE.Box3().setFromObject(scene);
-    const size = new THREE.Vector3();
+    const box = new Box3().setFromObject(scene);
+    const size = new Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
     const s = maxDim > 0 ? 1 / maxDim : 0.01;
     scene.scale.set(s, s, s);
     scene.rotation.set(0, Math.PI, 0);  // face forward
     modelObjRef.current = scene;
-    container.add(scene);  // imperatively add to Three.js scene graph
+    if (container) {
+      container.add(scene);  // imperatively add to Three.js scene graph
+    }
   });
+  return () => {
+    if (modelObjRef.current && container) {
+      container.remove(modelObjRef.current);
+    }
+  };
 }, []);
 ```
 
@@ -462,8 +610,8 @@ meshRef.current.quaternion.copy(camera.quaternion);  // match camera rotation
 **Banking/Tilt:**
 ```jsx
 // Look at where the path is going vs where it came from
-const pointAhead = curve.getPointAt(ahead);
-const pointBehind = curve.getPointAt(behind);
+const pointAhead = curve.getPointAt(ahead);   // 3% ahead
+const pointBehind = curve.getPointAt(behind); // 3% behind
 const lateralDelta = pointAhead.x - pointBehind.x;  // positive = turning right
 
 // Convert to roll angle
@@ -471,7 +619,7 @@ const targetRoll = -lateralDelta * 0.5;
 currentRoll.current += (targetRoll - currentRoll.current) * 0.03;  // smooth it
 
 // Apply roll around the forward axis (like an airplane banking)
-_forwardAxis.set(0, 0, -1).applyQuaternion(camera.quaternion);
+_forwardAxis.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
 _rollQuat.setFromAxisAngle(_forwardAxis, currentRoll.current);
 meshRef.current.quaternion.premultiply(_rollQuat);
 ```
@@ -488,60 +636,80 @@ m.rotation.z = Math.cos(time * 4.2) * 0.03;       // subtle roll wobble
 
 **Flight Path:**
 ```jsx
-const curve = useMemo(() => {
-  const points = [
-    new THREE.Vector3(0, 0, 0),        // start
-    new THREE.Vector3(0.8, 0.5, -10),   // slight right, up
-    new THREE.Vector3(-1.5, 1.2, -20),  // swing left, up
-    // ... more points snaking left/right/up through Z axis
-    new THREE.Vector3(1.0, 2.8, -100),  // end
-  ];
-  return new THREE.CatmullRomCurve3(points);
-}, []);
+const points = [
+  new Vector3(0, 0, 0),         // start
+  new Vector3(0.8, 0.5, -10),   // slight right, up
+  new Vector3(-1.5, 1.2, -20),  // swing left, up
+  new Vector3(1.2, 2.0, -30),
+  new Vector3(-0.8, 1.5, -40),
+  new Vector3(2.0, 2.5, -50),
+  new Vector3(-1.2, 2.0, -60),
+  new Vector3(0.6, 3.0, -70),
+  new Vector3(-1.5, 2.5, -80),
+  new Vector3(0.3, 3.5, -90),
+  new Vector3(1.0, 2.8, -100),  // end
+];
+const curve = new CatmullRomCurve3(points);
 ```
 
 11 control points define a smooth path 100 units long. The path snakes left/right (X) and gradually ascends (Y) while moving forward (Z). `CatmullRomCurve3` creates a smooth curve that passes through every point.
 
-**Cloud Generation:**
+**Cloud Generation (Two Tiers):**
 ```jsx
-for (let i = 0; i < 45; i++) {
-  const t = i / 45;                              // evenly spaced along path
-  const pointOnPath = curve.getPointAt(t);        // position on the curve
-  let offsetX = (rng() - 0.5) * 30;             // random X offset (±15 units)
-  let offsetY = (rng() - 0.5) * 12;             // random Y offset (±6 units)
-  if (Math.abs(offsetX) < 3) {                   // push clouds away from flight path
-    offsetX = offsetX > 0 ? offsetX + 3 : offsetX - 3;
-  }
+const rng = seededRandom(42);
+const clouds = [];
+
+// Close clouds — 30 instances, 2.5–7.5 units from path, scale 1.0–3.5
+for (let i = 0; i < 30; i++) {
+  const t = i / 30;
+  const pointOnPath = curve.getPointAt(t);
+  const side = rng() > 0.5 ? 1 : -1;
+  const dist = 2.5 + rng() * 5;
+  // ... push to clouds array
+}
+
+// Mid-distance clouds — 15 instances, 8–20 units from path, scale 0.5–2.0
+for (let i = 0; i < 15; i++) {
+  const t = i / 15;
+  const pointOnPath = curve.getPointAt(t);
+  const side = rng() > 0.5 ? 1 : -1;
+  const dist = 8 + rng() * 12;
+  // ... push to clouds array
 }
 ```
 
-Clouds are placed along the entire flight path with random offsets. The minimum distance check (`< 3`) ensures no clouds block the view.
+45 total clouds split into two distance tiers: 30 close (you fly past these) and 15 mid-distance (fill the sky). Each tier has different scale ranges and distances from the path.
 
 **Camera Movement:**
 ```jsx
 useFrame(() => {
-  const pos = curve.getPointAt(progress);              // target position on curve
-  const lookAtPos = curve.getPointAt(progress + 0.025); // look slightly ahead
+  const progress = Math.max(0, Math.min(1, scrollRef.current));
+  const pos = curve.getPointAt(progress);
+  const lookAhead = Math.min(1, progress + 0.025);
+  const lookAtPos = curve.getPointAt(lookAhead);
 
-  camera.position.lerp(pos, 0.05);                     // smooth position
-  // ... quaternion slerp for smooth rotation
-  camera.quaternion.slerp(_targetQuat, 0.05);           // smooth rotation
+  camera.position.lerp(pos, 0.05);              // smooth position (5% per frame)
+
+  _tempCam.position.copy(pos);
+  _tempCam.lookAt(lookAtPos);
+  _targetQuat.copy(_tempCam.quaternion);
+  camera.quaternion.slerp(_targetQuat, 0.05);    // smooth rotation (5% per frame)
 });
 ```
 
-The camera doesn't snap to positions — it lerps (smoothly interpolates) toward them at 5% per frame.
+The camera doesn't snap to positions — it lerps/slerps toward them at 5% per frame for buttery-smooth movement.
 
 **Scene Composition:**
 ```jsx
 return (
   <>
-    <Sky scrollProgress={scrollProgress} />
+    <Sky scrollRef={scrollRef} />
     <ambientLight intensity={1.2} color="#ccd8ff" />
-    <directionalLight position={[5, 10, -5]} intensity={1.5} />
+    <directionalLight position={[5, 10, -5]} intensity={1.5} color="#ffffff" />
     <hemisphereLight skyColor="#aabbff" groundColor="#ffd4b0" intensity={0.8} />
-    <Airplane curve={curve} scrollProgress={scrollProgress} />
+    <Airplane curve={curve} scrollRef={scrollRef} />
     {clouds.map((cloud, idx) => (
-      <CloudMesh key={idx} ... />
+      <CloudMesh key={idx} position={cloud.position} scale={cloud.scale} scrollRef={scrollRef} />
     ))}
   </>
 );
@@ -551,6 +719,130 @@ Three lights create the atmosphere:
 - **ambientLight** — uniform base light (blue-tinted)
 - **directionalLight** — sun-like light from upper-right
 - **hemisphereLight** — blue from above, warm orange from below (simulates sky + ground bounce)
+
+---
+
+### 4.7. `AtmosScene/AboutSection.jsx` — Interactive Astronaut 3D Model
+
+**File:** `src/components/AtmosScene/AboutSection.jsx`
+
+This section appears below the flight experience in normal document flow. It renders an interactive 3D astronaut model inside a tablet-style mockup.
+
+#### AstronautModel Component
+
+```jsx
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+
+function AstronautModel({ dragRef }) {
+  const gltf = useLoader(GLTFLoader, '/models/astronaut.glb', (loader) => {
+    loader.setMeshoptDecoder(MeshoptDecoder);
+  });
+
+  // Auto-scale to 1.8 units using bounding box
+  const box = new Box3().setFromObject(gltf.scene);
+  const size = new Vector3();
+  const center = new Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const scale = 1.8 / maxDim;
+  // ... center offsets calculated from bounding box
+```
+
+Uses `useLoader` (from @react-three/fiber) instead of manual `GLTFLoader.load()` because the React Compiler allows `useLoader` in render — it's a hook, not a `ref.current` read. The `MeshoptDecoder` is needed because `astronaut.glb` was compressed with meshopt (1.36 MB vs 19.5 MB original).
+
+#### Drag-to-Rotate Interaction
+
+```jsx
+useFrame((state, delta) => {
+  const drag = dragRef.current;
+
+  if (drag.isDragging) {
+    // Calculate unconsumed delta
+    const dx = drag.deltaX - consumedDrag.current.deltaX;
+    const dy = drag.deltaY - consumedDrag.current.deltaY;
+    consumedDrag.current.deltaX = drag.deltaX;
+    consumedDrag.current.deltaY = drag.deltaY;
+
+    rotY.current += dx * 0.008;   // sensitivity: 0.008 radians per pixel
+    rotX.current += dy * 0.008;
+    // Clamp X so it doesn't flip upside down
+    rotX.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotX.current));
+  } else {
+    // Slow idle auto-rotate when not dragging
+    rotY.current += delta * 0.25;
+    // Ease rotX back to 0
+    rotX.current += (0 - rotX.current) * delta * 1.5;
+  }
+
+  groupRef.current.rotation.y = rotY.current;
+  groupRef.current.rotation.x = rotX.current;
+  groupRef.current.position.y = offsetY + Math.sin(t * 0.6) * 0.08;  // gentle bobbing
+});
+```
+
+The drag state is shared via a ref (`dragRef`) from the outer `AstronautCanvas` component, which attaches pointer/touch event listeners to the canvas container.
+
+#### Conditional Canvas Mounting
+
+```jsx
+export default function AboutSection() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { rootMargin: '200px' }  // start loading 200px before visible
+    );
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section ref={sectionRef}>
+      {/* Tablet mockup contains: */}
+      <AstronautCanvas active={isVisible} />
+      {/* Text content beside it */}
+    </section>
+  );
+}
+```
+
+The WebGL Canvas **only mounts when the section is visible** (plus 200px margin). This prevents wasting GPU resources on a hidden section and avoids WebGL context limits on mobile.
+
+#### WebGL Context Loss Fallback
+
+```jsx
+onCreated={({ gl }) => {
+  const canvas = gl.domElement;
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    setWebglFailed(true);
+  });
+}}
+```
+
+If the GPU runs out of WebGL contexts (common on mobile), the component gracefully falls back to a static message: "3D preview unavailable on this device".
+
+#### Lighting (Astronaut Scene)
+
+```jsx
+<color attach="background" args={['#000008']} />
+<ambientLight intensity={0.4} color="#ccd8ff" />
+<directionalLight position={[3, 5, 3]} intensity={1.8} color="#ffffff" />
+<directionalLight position={[-4, -2, -3]} intensity={0.3} color="#4488ff" />
+<pointLight position={[0, 3, 2]} intensity={0.6} color="#aaccff" />
+```
+
+Multiple lights from different angles create a dramatic 3D look against the near-black background.
+
+#### Layout
+
+- **Desktop/Tablet**: Side-by-side (`md:flex`) — tablet mockup on left (50–55% width), text on right
+- **Mobile**: Stacked (`flex-col md:hidden`) — tablet mockup centered above, text below
+
+The tablet mockup is a dark gradient rounded rectangle with a notch (camera dot) at top and a home indicator bar at bottom.
 
 ---
 
@@ -601,10 +893,10 @@ Gives you access to the Three.js internals:
 A smooth 3D curve that passes through a list of control points. Unlike a Bezier curve, it goes **through** every point (not just near them).
 
 ```jsx
-const curve = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(0, 0, 0),
-  new THREE.Vector3(1, 2, -10),
-  new THREE.Vector3(-1, 3, -20),
+const curve = new CatmullRomCurve3([
+  new Vector3(0, 0, 0),
+  new Vector3(1, 2, -10),
+  new Vector3(-1, 3, -20),
 ]);
 
 curve.getPointAt(0);    // → first point
@@ -650,9 +942,21 @@ loader.load('/models/Airplane.glb', (gltf) => {
 });
 ```
 
-The model at `public/models/Airplane.glb` contains the airplane's geometry, materials, and textures in a single 231KB file.
+This project uses GLTFLoader for both the Airplane and Cloud models (loaded imperatively in `useEffect`). The astronaut model uses R3F's `useLoader(GLTFLoader, ...)` hook instead.
 
-### 5.7. What is Quaternion Slerp?
+### 5.7. What is MeshoptDecoder?
+
+```jsx
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+
+const gltf = useLoader(GLTFLoader, '/models/astronaut.glb', (loader) => {
+  loader.setMeshoptDecoder(MeshoptDecoder);
+});
+```
+
+Meshopt is a compression format for 3D model geometry. It dramatically reduces file sizes by encoding vertex/index data more efficiently. The astronaut model was compressed from **19.5 MB → 1.36 MB** using meshopt. The decoder runs on the client to decompress the geometry at load time.
+
+### 5.8. What is Quaternion Slerp?
 
 Quaternions are the math behind 3D rotations. Unlike Euler angles (pitch/yaw/roll), they don't suffer from gimbal lock.
 
@@ -665,7 +969,7 @@ camera.quaternion.slerp(targetQuaternion, 0.05);
 
 This creates the smooth camera turning effect.
 
-### 5.8. What is Lerp?
+### 5.9. What is Lerp?
 
 **Lerp** = Linear Interpolation. Smoothly moves a value toward a target:
 
@@ -677,7 +981,6 @@ const lerp = (start, end, factor) => start + (end - start) * factor;
 
 Used everywhere for smooth movement:
 - Camera position: `camera.position.lerp(target, 0.05)`
-- Scroll smoothing: `currentScroll = lerp(current, target, 0.04)`
 - Cloud color: `material.color.lerp(newColor, 0.05)`
 
 ---
@@ -685,33 +988,37 @@ Used everywhere for smooth movement:
 ## 6. How Scroll Works
 
 ```
-                    WHEEL / TOUCH EVENT
+              NATIVE BROWSER SCROLL
+              (600vh tall wrapper + sticky viewport)
                            │
                            ▼
               ┌─────────────────────────┐
-              │  targetScroll (instant)  │  ← jumps immediately
-              │  clamped to 0.0 – 1.0   │
+              │  useScroll() hook       │  ← Framer Motion tracks scroll position
+              │  scrollYProgress: 0–1   │     (MotionValue, no React re-renders)
               └──────────┬──────────────┘
                          │
-                    lerp(0.04) each frame
+              useMotionValueEvent('change')
                          │
                          ▼
               ┌─────────────────────────┐
-              │ currentScroll (smoothed) │  ← chases target gradually
-              └──────────┬──────────────┘
-                         │
-                setScrollProgress()
-                         │
-                         ▼
-              ┌─────────────────────────┐
-              │  scrollProgress (state)  │  ← React state, triggers re-render
+              │  scrollRef.current      │  ← plain number, readable in useFrame
               └──────────┬──────────────┘
                          │
               ┌──────────┼──────────────┐
               ▼          ▼              ▼
-           Camera     Sky Color     Text Overlays
-           + Plane    + Cloud Tint  + Contrail SVG
+           Camera     Sky Color     Clouds
+           + Plane    (shader)      (color lerp)
+
+              useTransform(scrollYProgress, ...)
+                         │
+              ┌──────────┼──────────────┐
+              ▼          ▼              ▼
+        Text Overlays  Intro/Hint   Contrail SVG
+        (opacity,      (opacity)    (motion.line y2)
+         scale, y)
 ```
+
+**Key insight:** The scroll mechanism uses **native browser scroll** (no `preventDefault`, no custom wheel handlers). The 600vh wrapper naturally scrolls, and Framer Motion's `useScroll` tracks the progress. The `useMotionValueEvent` bridge to `scrollRef` avoids React re-renders — the 3D scene reads `scrollRef.current` directly in `useFrame`.
 
 ---
 
@@ -759,7 +1066,7 @@ Scroll:  0.0         0.2         0.4         0.65        0.85       1.0
 Color:   Deep Blue → Blue → Sunset Purple → Warm Orange → Pink → Pink
 ```
 
-Implemented as a GLSL fragment shader on a huge inside-out sphere. The shader runs on the GPU, computing color per-pixel based on:
+Implemented as a GLSL fragment shader on a huge inside-out sphere (32×32 segments, scale=100). The shader runs on the GPU, computing color per-pixel based on:
 1. `uProgress` — scroll position (which color phase)
 2. `vPosition.y` — vertical position on sphere (gradient from bottom to top)
 
@@ -767,84 +1074,114 @@ Implemented as a GLSL fragment shader on a huge inside-out sphere. The shader ru
 
 ## 10. How Clouds Work
 
-- 45 clouds, each made of 5 overlapping spheres
-- Positioned along the flight path with random offsets
-- Minimum 3 units away from the path (so they don't block the view)
-- Seeded random ensures same layout every time
-- Colors tint to match the sky (white → purple → warm)
-- Sphere segments: 12×12 (optimized for performance)
+- **45 clouds total**: 30 close (2.5–7.5 units from path) + 15 mid-distance (8–20 units)
+- Each cloud is a **Cloud.glb 3D model** clone (not procedural spheres)
+- Model loaded once, cached globally, cloned with independent materials per instance
+- Reference counting ensures GPU memory is freed when all instances unmount
+- Positioned along the flight path with seeded random offsets (seed: 42)
+- Close clouds: scale 1.0–3.5 (big, you fly past these)
+- Mid-distance clouds: scale 0.5–2.0 (smaller, fill the sky)
+- Colors tint to match the sky: white → purple → peachy → warm → off-white
+- Color transition: `material.color.lerp(targetColor, 0.05)` per frame (smooth 5% blend)
 
 ---
 
 ## 11. How Text Overlays Work
 
 ```
-                    scrollProgress
+                    scrollYProgress (MotionValue)
                          │
                          ▼
-               ┌─────────────────┐
-Each text has: │  text.progress   │  (e.g., 0.30 for Fact #01)
-               └─────────────────┘
+              ┌──────────────────────────┐
+Each text has:│  start: 0.22, end: 0.38  │  (scroll range)
+              └──────────────────────────┘
                          │
-              diff = currentScroll - text.progress
+              useTransform(scrollYProgress,
+                [start, start+0.03, end-0.03, end],
+                [0,     1,          1,         0])
                          │
                   ┌──────┴──────┐
-                  │             │
-            diff < 0       diff > 0
-          (approaching)     (passing)
-                  │             │
-         scale: 0.3 → 1.0   scale: 1.0 → grows
-         opacity: 0 → 1     opacity: 1 → 0
+                  ▼             ▼
+           opacity: 0→1→1→0    scale: 0.85→1→1→1.1
                   │             │
                   └──────┬──────┘
                          │
-              el.style.transform = scale
-              el.style.opacity = opacity
+              <motion.div style={{ opacity, scale, y }}>
 ```
 
-**The depth effect:** Text starts small and invisible (far away), grows to full size as you reach it (close), then grows past full size and fades (passes by). This mimics the perspective of moving toward and past a sign on a road.
+All text animations are **declarative MotionValues** — no manual DOM manipulation, no `requestAnimationFrame` loops. Framer Motion handles the updates efficiently outside React's render cycle.
 
 ---
 
 ## 12. How the Contrail (Trail) Works
 
-A simple SVG `<line>` that:
+A `motion.line` SVG element that:
 - Starts at screen center (x=50%, y=48% — just below the plane)
-- Extends downward based on `scrollProgress`
-- Has a gradient: solid white at top → transparent at bottom
+- `y2` is a MotionValue derived from `scrollYProgress` via `useTransform([0, 1], [48, 100])`
+- Has a `linearGradient`: solid white (0.9 opacity) at top → transparent at bottom
 - Creates the illusion of a contrail/vapor trail behind the plane
 
 ---
 
-## 13. Performance Techniques
+## 13. How the Astronaut Model Works
 
-| Technique | What & Why |
-|-----------|-----------|
-| **Pre-allocated vectors** | `useMemo(() => new THREE.Vector3(), [])` — reuse the same object in useFrame instead of creating `new Vector3()` every frame (60 objects/sec → 0) |
-| **Seeded PRNG** | Avoids `Math.random()` which React Compiler forbids in useMemo. Same positions every render. |
-| **Reduced sphere segments** | 12×12 instead of 16×16. 45 clouds × 5 spheres = 225 meshes. (12² = 144 triangles vs 16² = 256 per sphere) |
-| **Vanilla JS text animation** | `el.style.transform` instead of React state. Avoids 60 re-renders/second. |
-| **`will-change: opacity`** | CSS hint to browser: "this element's opacity will change, please optimize" |
-| **`visibility: hidden`** | Fully transparent overlays are hidden from the compositor |
-| **`ssr: false` dynamic import** | 3D code only loads in browser, not during SSR build |
-| **Imperative model loading** | GLB added to scene graph via `.add()`, not React state. Avoids re-render on model load. |
-| **Capped scroll delta** | `Math.min(Math.abs(e.deltaY), 50)` prevents huge scroll jumps from trackpad flicks |
+```
+  IntersectionObserver (200px rootMargin)
+         │
+         ▼ isVisible = true
+  Canvas mounts → useLoader(GLTFLoader, 'astronaut.glb', MeshoptDecoder)
+         │
+         ▼
+  AstronautModel (auto-scaled to 1.8 units)
+         │
+    ┌────┴────┐
+    ▼         ▼
+  Dragging   Idle
+    │         │
+    ▼         ▼
+  dx * 0.008  rotY += delta * 0.25 (auto-rotate)
+  dy * 0.008  rotX eases to 0
+  X clamped   bobbing: sin(t * 0.6) * 0.08
+  ±π/2.2
+```
+
+The astronaut model is displayed inside a fake tablet mockup (dark gradient frame with notch). Pointer/touch events on the container div are tracked via event listeners and passed to the 3D component via a shared ref (`dragRef`).
 
 ---
 
-## 14. Customization Guide
+## 14. Performance Techniques
+
+| Technique | What & Why |
+|-----------|-----------|
+| **Pre-allocated vectors** | Reusable `Vector3`, `Quaternion` objects created once, mutated in useFrame — avoids GC pressure (0 allocations per frame) |
+| **Seeded PRNG** | Avoids `Math.random()` which React Compiler forbids. Same positions every render. |
+| **Cloud model caching** | Cloud.glb loaded once, cloned 45 times. Reference counting frees GPU memory when done. |
+| **Meshopt compression** | Astronaut model compressed 19.5 MB → 1.36 MB. MeshoptDecoder decompresses on the client. |
+| **MotionValue-based animations** | `useTransform` creates derived values without React re-renders. Text overlays, intro, contrail all animate via MotionValues. |
+| **scrollRef bridge** | `useMotionValueEvent` writes to a plain ref — Three.js reads it in useFrame without triggering React. |
+| **DPR clamping** | `dpr={[1, 1.5]}` prevents rendering at full 2x/3x retina resolution on high-DPI screens. |
+| **IntersectionObserver** | AboutSection Canvas only mounts when visible (+ 200px margin). Saves GPU on hidden sections. |
+| **WebGL context fallback** | Graceful degradation when GPU can't create more contexts (common on mobile). |
+| **`ssr: false` dynamic import** | 3D code only loads in browser, not during SSR build. |
+| **Imperative model loading** | GLB added to scene graph via `.add()`, not React state. Avoids re-render on model load. |
+| **`powerPreference: 'high-performance'`** | Requests dedicated GPU over integrated graphics. |
+
+---
+
+## 15. Customization Guide
 
 ### Change scroll speed
-In `index.jsx`, line with `* 0.00008`:
+The scroll speed is controlled by the wrapper height. In `index.jsx`:
 ```jsx
-const delta = rawDelta * 0.00008;  // increase for faster, decrease for slower
+<div ref={wrapperRef} className="relative h-[600vh]">
 ```
+Increase `600vh` for slower scrolling (more scroll distance per progress unit), decrease for faster.
 
 ### Change flight path
 In `AtmosExperience.jsx`, edit the `points` array:
 ```jsx
 const points = [
-  new THREE.Vector3(x, y, z),  // x=left/right, y=up/down, z=forward(negative)
+  new Vector3(x, y, z),  // x=left/right, y=up/down, z=forward(negative)
   // ... add/remove/move points
 ];
 ```
@@ -873,25 +1210,29 @@ currentRoll.current += (targetRoll - currentRoll.current) * 0.03;  // increase 0
 In `index.jsx`, edit the `textContent` array:
 ```jsx
 {
-  progress: 0.30,      // when this text appears (0–1 scroll position)
-  sup: 'Fact #01',     // small label above title
+  start: 0.22,       // when this text starts appearing (0–1 scroll range)
+  end: 0.38,         // when this text finishes disappearing
+  sup: 'Fact #01',   // small label above title
   title: 'SKY\nBABIES', // big title (\n = line break)
   body: 'Description text...',
-  side: 'right',       // 'right' or 'left' — screen edge alignment
+  side: 'right',     // 'right' or 'left' — screen edge alignment
 }
 ```
 
 ### Change number of clouds
-In `AtmosExperience.jsx`:
+In `AtmosExperience.jsx`, adjust the loop counts:
 ```jsx
-const numClouds = 45;  // increase for denser clouds, decrease for sparser
+for (let i = 0; i < 30; i++) { ... }  // close clouds (increase/decrease)
+for (let i = 0; i < 15; i++) { ... }  // mid-distance clouds (increase/decrease)
 ```
 
-### Change cloud spread distance
+### Change cloud distances
 ```jsx
-let offsetX = (rng() - 0.5) * 30;  // 30 = horizontal spread (increase for wider)
-let offsetY = (rng() - 0.5) * 12;  // 12 = vertical spread
-if (Math.abs(offsetX) < 3) {       // 3 = minimum distance from flight path
+// Close clouds
+const dist = 2.5 + rng() * 5;   // 2.5–7.5 units (adjust range)
+
+// Mid-distance clouds
+const dist = 8 + rng() * 12;    // 8–20 units (adjust range)
 ```
 
 ### Swap the airplane model
@@ -902,24 +1243,30 @@ if (Math.abs(offsetX) < 3) {       // 3 = minimum distance from flight path
    ```
 3. The auto-scaling will normalize any model to ~1 unit
 
+### Swap the astronaut model
+1. Place your `.glb` file in `public/models/`
+2. Update the path in `AboutSection.jsx`:
+   ```jsx
+   const gltf = useLoader(GLTFLoader, '/models/YourModel.glb', (loader) => {
+     loader.setMeshoptDecoder(MeshoptDecoder);  // only if meshopt-compressed
+   });
+   ```
+3. If your model is NOT meshopt-compressed, remove the `MeshoptDecoder` setup
+
 ---
 
-## 15. Common Pitfalls & React Compiler Notes
+## 16. Common Pitfalls & React Compiler Notes
 
 This project uses `babel-plugin-react-compiler` which enforces strict rules:
 
-### 1. No `Math.random()` in useMemo
+### 1. No `Math.random()` in render
 ```jsx
 // BAD — React Compiler error (not pure)
-const clouds = useMemo(() => {
-  return positions.map(() => Math.random());
-}, []);
+const clouds = positions.map(() => Math.random());
 
 // GOOD — seeded PRNG is deterministic
 const rng = seededRandom(42);
-const clouds = useMemo(() => {
-  return positions.map(() => rng());
-}, []);
+const clouds = positions.map(() => rng());
 ```
 
 ### 2. No `ref.current` in render JSX
@@ -959,8 +1306,8 @@ useFrame(() => { materialRef.current.color.set(0xff0000); });
 ## Summary
 
 The entire `/atmos` experience is built with:
-- **2 npm packages** for 3D: `three` + `@react-three/fiber`
-- **0 animation libraries**: vanilla JS for DOM, `useFrame` + math for 3D
-- **4 files**: page.jsx, atmos.css, index.jsx, AtmosExperience.jsx
-- **1 asset**: Airplane.glb (231KB)
-- **1 driving variable**: `scrollProgress` (0 to 1)
+- **3 npm packages**: `three` + `@react-three/fiber` for 3D, `motion` for scroll-driven DOM animations
+- **7 files**: page.jsx, AtmosSceneLoader.jsx, AboutSectionLoader.jsx, atmos.module.css, index.jsx, AtmosExperience.jsx, AboutSection.jsx
+- **3 model assets**: Airplane.glb (236KB), Cloud.glb (619KB), astronaut.glb (1.36MB meshopt-compressed)
+- **1 driving variable**: `scrollYProgress` MotionValue (0 to 1)
+- **2 sections**: Scroll-driven 3D flight + Interactive astronaut About section
