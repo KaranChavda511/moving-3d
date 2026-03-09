@@ -143,7 +143,7 @@ export default function AtmosScene() {
       <div className="sticky top-0 h-screen w-full overflow-hidden">
         {/* 3D Canvas */}
         <Canvas
-          className="absolute! inset-0 h-full w-full"
+          className="absolute! inset-0 z-0 h-full w-full"
           camera={{ position: [0, 0, 0], fov: 75 }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
           dpr={[1, 1.5]}
@@ -204,7 +204,7 @@ export default function AtmosScene() {
           className="pointer-events-none absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-center text-white"
           style={{ opacity: introOpacity }}
         >
-          <h1 className="m-0 font-serif text-[clamp(60px,12vw,140px)] font-normal tracking-[0.3em] drop-shadow-[0_4px_30px_rgba(0,0,0,0.3)] max-md:tracking-[0.2em] max-[480px]:tracking-[0.15em]">
+          <h1 className="m-0 whitespace-nowrap font-serif text-[clamp(40px,12vw,140px)] font-normal tracking-[0.3em] drop-shadow-[0_4px_30px_rgba(0,0,0,0.3)] max-md:tracking-[0.2em] max-[480px]:tracking-widest">
             {'ATMOS'.split('').map((letter, i) => (
               <span
                 key={i}
