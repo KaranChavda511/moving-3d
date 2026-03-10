@@ -85,7 +85,7 @@ const products = [
     title: "Invoker Labs",
     link: "https://invoker.lol",
     thumbnail:
-      "https://www.aceternity.com/images/products/thumbnails/new/invoker.png",
+      "https://www.aceternity.com/images/products/thumbnails/new/smartbridge.png",
   },
   {
     title: "E Free Invoice",

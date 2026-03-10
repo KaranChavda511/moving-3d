@@ -71,7 +71,7 @@ export const HeroParallax = ({ products }) => {
           opacity,
         }}
       >
-        <motion.div className="mb-8 flex flex-row-reverse space-x-8 space-x-reverse sm:mb-14 sm:space-x-14 md:mb-20 md:space-x-20">
+        <motion.div className="mb-10 flex flex-row-reverse gap-10 sm:mb-16 sm:gap-16 md:mb-20 md:gap-20">
           {firstRow.map((product) => (
             <ProductCard
               product={product}
@@ -80,7 +80,7 @@ export const HeroParallax = ({ products }) => {
             />
           ))}
         </motion.div>
-        <motion.div className="mb-8 flex flex-row space-x-8 sm:mb-14 sm:space-x-14 md:mb-20 md:space-x-20">
+        <motion.div className="mb-10 flex flex-row gap-10 sm:mb-16 sm:gap-16 md:mb-20 md:gap-20">
           {secondRow.map((product) => (
             <ProductCard
               product={product}
@@ -89,7 +89,7 @@ export const HeroParallax = ({ products }) => {
             />
           ))}
         </motion.div>
-        <motion.div className="flex flex-row-reverse space-x-8 space-x-reverse sm:space-x-14 md:space-x-20">
+        <motion.div className="flex flex-row-reverse gap-10 sm:gap-16 md:gap-20">
           {thirdRow.map((product) => (
             <ProductCard
               product={product}
