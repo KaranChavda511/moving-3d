@@ -93,12 +93,12 @@ export const ParallaxHeroImages = ({
       if (e && e.beta !== null && e.gamma !== null) {
         // beta: front-back tilt. Resting upright = ~90°, so subtract 90 to center at 0
         // gamma: left-right tilt. Resting = 0°
-        // Clamp to [-45, 45] range for smooth parallax
-        const normalizedBeta = Math.max(-45, Math.min(45, e.beta - 90))
-        const normalizedGamma = Math.max(-45, Math.min(45, e.gamma))
+        // Clamp to [-20, 20] so small tilts produce strong parallax
+        const normalizedBeta = Math.max(-20, Math.min(20, e.beta - 90))
+        const normalizedGamma = Math.max(-20, Math.min(20, e.gamma))
         // Convert to -1..1 range
-        mouseX.set(normalizedGamma / 45)
-        mouseY.set(normalizedBeta / 45)
+        mouseX.set(normalizedGamma / 20)
+        mouseY.set(normalizedBeta / 20)
       }
       rafId = requestAnimationFrame(tick)
     }
@@ -194,7 +194,7 @@ const ParallaxImage = memo(function ParallaxImage({
   smoothMouseY,
   isMobile,
 }) {
-  const maxOffset = isMobile ? 20 : 40
+  const maxOffset = isMobile ? 40 : 40
 
   const translateX = useTransform(
     smoothMouseX,
