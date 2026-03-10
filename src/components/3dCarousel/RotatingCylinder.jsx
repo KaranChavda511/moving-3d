@@ -1,8 +1,9 @@
 "use client"
 
-import { useFrame, useLoader } from "@react-three/fiber"
+import { useFrame } from "@react-three/fiber"
+import { useTexture } from "@react-three/drei"
 import { useRef } from "react"
-import { CylinderGeometry, DoubleSide, TextureLoader } from "three"
+import { CylinderGeometry, DoubleSide } from "three"
 
 const images = [
   "/images/image-1.jpg",
@@ -18,7 +19,7 @@ function CurvedPanel({ texture, angle, radius }) {
   const geometry = new CylinderGeometry(
     radius,
     radius,
-    2.5,
+    1.8,
     32,
     1,
     true,
@@ -41,9 +42,9 @@ function CurvedPanel({ texture, angle, radius }) {
 
 export default function RotatingCylinder() {
   const groupRef = useRef()
-  const radius = 3
+  const radius = 2.2
 
-  const textures = useLoader(TextureLoader, images)
+  const textures = useTexture(images)
 
   useFrame(() => {
     if (groupRef.current) {
@@ -52,7 +53,7 @@ export default function RotatingCylinder() {
   })
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[0, 0.5, 0]}>
       {images.map((_, i) => {
         const angle = (i / images.length) * Math.PI * 2
         return (
