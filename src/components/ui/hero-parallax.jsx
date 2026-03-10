@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useSyncExternalStore } from "react"
 import Image from "next/image"
 import {
   motion,
@@ -9,7 +9,18 @@ import {
   useSpring,
 } from "motion/react"
 
+const subscribe = (cb) => {
+  window.addEventListener("resize", cb)
+  return () => window.removeEventListener("resize", cb)
+}
+
 export const HeroParallax = ({ products }) => {
+  const isMobile = useSyncExternalStore(
+    subscribe,
+    () => window.innerWidth < 768,
+    () => false,
+  )
+
   const firstRow = products.slice(0, 5)
   const secondRow = products.slice(5, 10)
   const thirdRow = products.slice(10, 15)
@@ -22,11 +33,11 @@ export const HeroParallax = ({ products }) => {
   const springConfig = { stiffness: 300, damping: 30, bounce: 100 }
 
   const translateX = useSpring(
-    useTransform(scrollYProgress, [0, 1], [0, 1000]),
+    useTransform(scrollYProgress, [0, 1], [0, isMobile ? 400 : 1000]),
     springConfig,
   )
   const translateXReverse = useSpring(
-    useTransform(scrollYProgress, [0, 1], [0, -1000]),
+    useTransform(scrollYProgress, [0, 1], [0, isMobile ? -400 : -1000]),
     springConfig,
   )
   const rotateX = useSpring(
@@ -42,14 +53,14 @@ export const HeroParallax = ({ products }) => {
     springConfig,
   )
   const translateY = useSpring(
-    useTransform(scrollYProgress, [0, 0.2], [-700, 500]),
+    useTransform(scrollYProgress, [0, 0.2], [isMobile ? -400 : -700, isMobile ? 300 : 500]),
     springConfig,
   )
 
   return (
     <div
       ref={ref}
-      className="relative flex h-[300vh] flex-col self-auto overflow-hidden py-40 antialiased [perspective:1000px] [transform-style:preserve-3d]"
+      className="relative flex h-[200vh] flex-col self-auto overflow-hidden py-20 antialiased sm:py-30 md:h-[300vh] md:py-40 perspective-[1000px] transform-3d"
     >
       <Header />
       <motion.div
@@ -60,7 +71,7 @@ export const HeroParallax = ({ products }) => {
           opacity,
         }}
       >
-        <motion.div className="mb-20 flex flex-row-reverse space-x-20 space-x-reverse">
+        <motion.div className="mb-8 flex flex-row-reverse space-x-8 space-x-reverse sm:mb-14 sm:space-x-14 md:mb-20 md:space-x-20">
           {firstRow.map((product) => (
             <ProductCard
               product={product}
@@ -69,7 +80,7 @@ export const HeroParallax = ({ products }) => {
             />
           ))}
         </motion.div>
-        <motion.div className="mb-20 flex flex-row space-x-20">
+        <motion.div className="mb-8 flex flex-row space-x-8 sm:mb-14 sm:space-x-14 md:mb-20 md:space-x-20">
           {secondRow.map((product) => (
             <ProductCard
               product={product}
@@ -78,7 +89,7 @@ export const HeroParallax = ({ products }) => {
             />
           ))}
         </motion.div>
-        <motion.div className="flex flex-row-reverse space-x-20 space-x-reverse">
+        <motion.div className="flex flex-row-reverse space-x-8 space-x-reverse sm:space-x-14 md:space-x-20">
           {thirdRow.map((product) => (
             <ProductCard
               product={product}
@@ -94,11 +105,11 @@ export const HeroParallax = ({ products }) => {
 
 const Header = () => {
   return (
-    <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 md:py-40">
-      <h1 className="text-2xl font-bold text-white md:text-7xl">
+    <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-10 sm:py-20 md:py-40">
+      <h1 className="text-3xl font-bold text-white sm:text-5xl md:text-7xl">
         The Ultimate <br /> development studio
       </h1>
-      <p className="mt-8 max-w-2xl text-base text-neutral-200 md:text-xl">
+      <p className="mt-4 max-w-2xl text-sm text-neutral-200 sm:mt-6 sm:text-base md:mt-8 md:text-xl">
         We build beautiful products with the latest technologies and frameworks.
         We are a team of passionate developers and designers that love to build
         amazing products.
@@ -117,7 +128,7 @@ const ProductCard = ({ product, translate }) => {
         y: -20,
       }}
       key={product.title}
-      className="group/product relative h-96 w-[30rem] shrink-0"
+      className="group/product relative h-48 w-[16rem] shrink-0 sm:h-72 sm:w-88 md:h-96 md:w-120"
     >
       <a
         href={product.link}
@@ -127,12 +138,12 @@ const ProductCard = ({ product, translate }) => {
           src={product.thumbnail}
           height={600}
           width={600}
-          className="absolute inset-0 h-full w-full object-cover object-left-top"
+          className="absolute inset-0 h-full w-full rounded-lg object-cover object-top-left"
           alt={product.title}
         />
       </a>
-      <div className="pointer-events-none absolute inset-0 h-full w-full bg-black opacity-0 group-hover/product:opacity-80" />
-      <h2 className="absolute bottom-4 left-4 text-white opacity-0 group-hover/product:opacity-100">
+      <div className="pointer-events-none absolute inset-0 h-full w-full rounded-lg bg-black opacity-0 group-hover/product:opacity-80" />
+      <h2 className="absolute bottom-2 left-2 text-sm text-white opacity-0 group-hover/product:opacity-100 sm:bottom-4 sm:left-4 sm:text-base">
         {product.title}
       </h2>
     </motion.div>
