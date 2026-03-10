@@ -1,38 +1,5 @@
-import { Zap, BarChart3, Palette, Lock, Smartphone, Cloud } from 'lucide-react'
 import Starfield from '@/components/3dCarousel/Starfield.client'
-
-const features = [
-  {
-    icon: Zap,
-    title: 'Lightning Fast',
-    description: 'Optimized rendering delivers smooth 60fps animations with minimal lag'
-  },
-  {
-    icon: Palette,
-    title: 'Fully Customizable',
-    description: 'Control colors, animations, speed, and behavior to match your brand'
-  },
-  {
-    icon: Smartphone,
-    title: 'Responsive Design',
-    description: 'Works flawlessly on desktop, tablet, and mobile devices'
-  },
-  {
-    icon: Lock,
-    title: 'Production Ready',
-    description: 'Battle-tested code with enterprise-level reliability'
-  },
-  {
-    icon: Cloud,
-    title: 'Easy Integration',
-    description: 'Simple API with comprehensive documentation and examples'
-  },
-  {
-    icon: BarChart3,
-    title: 'Analytics Ready',
-    description: 'Built-in tracking for user interactions and engagement metrics'
-  },
-]
+import FeaturesGrid from './FeaturesGrid.client'
 
 const FeaturesSection = () => {
   return (
@@ -73,35 +40,8 @@ const FeaturesSection = () => {
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, idx) => {
-            const Icon = feature.icon
-            return (
-              <div
-                key={idx}
-                className="group relative p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
-              >
-                {/* Hover background effect */}
-                <div className="absolute inset-0 bg-primary/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-
-                  <h3 className="text-xl font-semibold text-white mb-3">
-                    {feature.title}
-                  </h3>
-
-                  <p className="text-white/60 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        {/* Features Grid with 3D Cards */}
+        <FeaturesGrid />
       </div>
     </section>
   )
