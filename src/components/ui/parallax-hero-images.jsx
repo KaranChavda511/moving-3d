@@ -1,5 +1,10 @@
 "use client"
-import React, { useEffect, useMemo, memo } from "react"
+import React, { useEffect, useMemo, memo, useCallback, useRef, useSyncExternalStore } from "react"
+
+const subscribeResize = (cb) => {
+  window.addEventListener("resize", cb)
+  return () => window.removeEventListener("resize", cb)
+}
 import Image from "next/image"
 import {
   motion,
@@ -8,15 +13,24 @@ import {
   useTransform,
 } from "motion/react"
 
-const positionStyles = {
+// Desktop: spread wide across viewport
+const desktopPositions = {
   "top-left": { top: "8%", left: "4%" },
   "top-right": { top: "8%", right: "4%" },
   "mid-left": { top: "38%", left: "6%" },
   "mid-right": { top: "38%", right: "6%" },
   "bottom-left": { top: "68%", left: "4%" },
   "bottom-right": { top: "68%", right: "4%" },
-  "far-left": { top: "52%", left: "2%" },
-  "far-right": { top: "52%", right: "2%" },
+}
+
+// Mobile: tighter 2-column grid that fits small screens
+const mobilePositions = {
+  "top-left": { top: "5%", left: "2%" },
+  "top-right": { top: "5%", right: "2%" },
+  "mid-left": { top: "35%", left: "0%" },
+  "mid-right": { top: "35%", right: "0%" },
+  "bottom-left": { top: "65%", left: "2%" },
+  "bottom-right": { top: "65%", right: "2%" },
 }
 
 const positionOrder = [
@@ -26,13 +40,11 @@ const positionOrder = [
   "mid-right",
   "bottom-left",
   "bottom-right",
-  "far-left",
-  "far-right",
 ]
 
 const depthValuesByVariant = {
-  default: [0.3, 0.35, 0.9, 0.85, 0.4, 0.45, 0.25, 0.2],
-  "edge-focus": [0.85, 0.9, 0.3, 0.35, 0.8, 0.85, 0.4, 0.45],
+  default: [0.3, 0.35, 0.9, 0.85, 0.4, 0.45],
+  "edge-focus": [0.85, 0.9, 0.3, 0.35, 0.8, 0.85],
 }
 
 const SPRING_CONFIG = { damping: 25, stiffness: 120 }
@@ -42,15 +54,23 @@ export const ParallaxHeroImages = ({
   className,
   imageClassName,
   variant = "default",
+  onTiltStatusChange,
 }) => {
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
+  const isMobile = useSyncExternalStore(
+    subscribeResize,
+    () => window.innerWidth < 768,
+    () => false,
+  )
+  const lastEventRef = useRef(null)
 
   const smoothMouseX = useSpring(mouseX, SPRING_CONFIG)
   const smoothMouseY = useSpring(mouseY, SPRING_CONFIG)
 
+  // Limit to 6 images (3 rows × 2 columns)
   const positions = useMemo(() => {
-    const limitedImages = images.slice(0, 8)
+    const limitedImages = images.slice(0, 6)
     const depthValues = depthValuesByVariant[variant]
     return limitedImages.map((src, index) => ({
       src,
@@ -60,17 +80,88 @@ export const ParallaxHeroImages = ({
     }))
   }, [images, variant])
 
+  const startOrientationListener = useCallback(() => {
+    // Store raw events and process via rAF for performance
+    const handleEvent = (e) => {
+      lastEventRef.current = e
+    }
+    window.addEventListener("deviceorientation", handleEvent)
+
+    let rafId
+    const tick = () => {
+      const e = lastEventRef.current
+      if (e && e.beta !== null && e.gamma !== null) {
+        // beta: front-back tilt. Resting upright = ~90°, so subtract 90 to center at 0
+        // gamma: left-right tilt. Resting = 0°
+        // Clamp to [-45, 45] range for smooth parallax
+        const normalizedBeta = Math.max(-45, Math.min(45, e.beta - 90))
+        const normalizedGamma = Math.max(-45, Math.min(45, e.gamma))
+        // Convert to -1..1 range
+        mouseX.set(normalizedGamma / 45)
+        mouseY.set(normalizedBeta / 45)
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+
+    onTiltStatusChange?.("active")
+
+    return () => {
+      window.removeEventListener("deviceorientation", handleEvent)
+      cancelAnimationFrame(rafId)
+    }
+  }, [mouseX, mouseY, onTiltStatusChange])
+
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      const x = (e.clientX / window.innerWidth) * 2 - 1
-      const y = (e.clientY / window.innerHeight) * 2 - 1
-      mouseX.set(x)
-      mouseY.set(y)
+    if (!isMobile) {
+      const handleMouseMove = (e) => {
+        const x = (e.clientX / window.innerWidth) * 2 - 1
+        const y = (e.clientY / window.innerHeight) * 2 - 1
+        mouseX.set(x)
+        mouseY.set(y)
+      }
+      window.addEventListener("mousemove", handleMouseMove)
+      return () => window.removeEventListener("mousemove", handleMouseMove)
     }
 
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [mouseX, mouseY])
+    // Mobile: check if we need permission (iOS 13+)
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function"
+    ) {
+      // iOS — needs user tap to grant permission
+      onTiltStatusChange?.("needs-permission")
+    } else if (typeof DeviceOrientationEvent !== "undefined") {
+      // Android / other — just listen directly, no permission needed
+      return startOrientationListener()
+    }
+  }, [isMobile, mouseX, mouseY, onTiltStatusChange, startOrientationListener])
+
+  // Handle iOS permission request triggered by parent via custom event
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handlePermissionRequest = async () => {
+      if (
+        typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function"
+      ) {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission()
+          if (permission === "granted") {
+            startOrientationListener()
+          } else {
+            onTiltStatusChange?.("denied")
+          }
+        } catch {
+          onTiltStatusChange?.("denied")
+        }
+      }
+    }
+
+    window.addEventListener("request-device-orientation", handlePermissionRequest)
+    return () => window.removeEventListener("request-device-orientation", handlePermissionRequest)
+  }, [isMobile, startOrientationListener, onTiltStatusChange])
 
   return (
     <div
@@ -86,6 +177,7 @@ export const ParallaxHeroImages = ({
           imageClassName={imageClassName}
           smoothMouseX={smoothMouseX}
           smoothMouseY={smoothMouseY}
+          isMobile={isMobile}
         />
       ))}
     </div>
@@ -100,8 +192,9 @@ const ParallaxImage = memo(function ParallaxImage({
   imageClassName,
   smoothMouseX,
   smoothMouseY,
+  isMobile,
 }) {
-  const maxOffset = 40
+  const maxOffset = isMobile ? 20 : 40
 
   const translateX = useTransform(
     smoothMouseX,
@@ -115,7 +208,9 @@ const ParallaxImage = memo(function ParallaxImage({
     [-maxOffset * depth, maxOffset * depth],
   )
 
-  const posStyle = positionStyles[position]
+  const posStyle = isMobile
+    ? mobilePositions[position]
+    : desktopPositions[position]
 
   return (
     <motion.div
@@ -142,7 +237,7 @@ const ParallaxImage = memo(function ParallaxImage({
         width={320}
         height={240}
         loading="lazy"
-        className={`aspect-4/3 h-20 w-32 rounded-lg object-cover shadow-sm ring-1 ring-black/10 sm:h-40 sm:w-56 md:h-52 md:w-80 dark:ring-white/10 ${imageClassName || ""}`}
+        className={`aspect-4/3 h-24 w-[42vw] max-w-32 rounded-lg object-cover shadow-sm ring-1 ring-black/10 sm:h-40 sm:max-w-56 md:h-52 md:max-w-80 dark:ring-white/10 ${imageClassName || ""}`}
       />
     </motion.div>
   )

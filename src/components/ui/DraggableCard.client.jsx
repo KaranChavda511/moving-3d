@@ -46,7 +46,6 @@ export const DraggableCardBody = ({ className = "", children }) => {
   )
 
   useEffect(() => {
-    // Find the parent DraggableCardContainer
     containerRef.current = cardRef.current?.closest("[data-drag-container]")
   }, [])
 
@@ -98,9 +97,10 @@ export const DraggableCardBody = ({ className = "", children }) => {
       }}
       animate={controls}
       whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`relative min-h-96 w-80 cursor-grab overflow-hidden rounded-md border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-sm active:cursor-grabbing ${className}`}
+      className={`relative cursor-grab overflow-hidden rounded-md border border-white/10 bg-white/5 p-3 shadow-2xl backdrop-blur-sm active:cursor-grabbing sm:p-4 md:min-h-96 md:w-80 md:p-6 ${className}`}
     >
       {children}
       <motion.div
