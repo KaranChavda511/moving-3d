@@ -4,7 +4,7 @@ import MacbookScrollContent from './MacbookScrollContent.client'
 const MacbookScrollSection = () => {
   return (
     <section
-      className="relative overflow-hidden"
+      className="relative overflow-clip"
       style={{
         background: [
           'radial-gradient(ellipse at 60% 30%, #1a2744 0%, transparent 50%)',

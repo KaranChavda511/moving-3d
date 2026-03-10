@@ -10,7 +10,7 @@ const MacbookScrollContent = () => {
           Experience the 3D Carousel <br /> on any device.
         </span>
       }
-      src="/images/image-2.jpg"
+      src="/gif/Welcome_GIF.gif"
       showGradient={false}
     />
   )
