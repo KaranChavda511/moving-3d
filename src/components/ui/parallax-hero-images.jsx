@@ -82,7 +82,15 @@ export const ParallaxHeroImages = ({
 
   const startOrientationListener = useCallback(() => {
     // Store raw events and process via rAF for performance
+    let initialBeta = null
+    let initialGamma = null
+
     const handleEvent = (e) => {
+      // Capture the user's natural holding angle on first event
+      if (initialBeta === null && e.beta !== null) {
+        initialBeta = e.beta
+        initialGamma = e.gamma || 0
+      }
       lastEventRef.current = e
     }
     window.addEventListener("deviceorientation", handleEvent)
@@ -90,15 +98,14 @@ export const ParallaxHeroImages = ({
     let rafId
     const tick = () => {
       const e = lastEventRef.current
-      if (e && e.beta !== null && e.gamma !== null) {
-        // beta: front-back tilt. Resting upright = ~90°, so subtract 90 to center at 0
-        // gamma: left-right tilt. Resting = 0°
-        // Clamp to [-20, 20] so small tilts produce strong parallax
-        const normalizedBeta = Math.max(-20, Math.min(20, e.beta - 90))
-        const normalizedGamma = Math.max(-20, Math.min(20, e.gamma))
+      if (e && e.beta !== null && e.gamma !== null && initialBeta !== null) {
+        // Subtract the initial resting angle so current position = center
+        // Clamp to [-15, 15] so small tilts produce strong parallax
+        const deltaBeta = Math.max(-15, Math.min(15, e.beta - initialBeta))
+        const deltaGamma = Math.max(-15, Math.min(15, e.gamma - initialGamma))
         // Convert to -1..1 range
-        mouseX.set(normalizedGamma / 20)
-        mouseY.set(normalizedBeta / 20)
+        mouseX.set(deltaGamma / 15)
+        mouseY.set(deltaBeta / 15)
       }
       rafId = requestAnimationFrame(tick)
     }
