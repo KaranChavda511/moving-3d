@@ -11,10 +11,6 @@ const subscribe = (cb) => {
 
 export const MacbookScroll = ({ src, title, showGradient = true }) => {
   const ref = useRef(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  })
 
   const isMobile = useSyncExternalStore(
     subscribe,
@@ -22,25 +18,38 @@ export const MacbookScroll = ({ src, title, showGradient = true }) => {
     () => false,
   )
 
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: isMobile ? ["start end", "end start"] : ["start start", "end start"],
+  })
+
   const scaleX = useTransform(
     scrollYProgress,
-    [0, 0.3],
+    isMobile ? [0.1, 0.4] : [0, 0.3],
     [1.2, isMobile ? 1.1 : 1.5],
   )
   const scaleY = useTransform(
     scrollYProgress,
-    [0, 0.3],
+    isMobile ? [0.1, 0.4] : [0, 0.3],
     [0.6, isMobile ? 1.1 : 1.5],
   )
-  const translate = useTransform(scrollYProgress, [0, 1], [0, isMobile ? 800 : 1500])
-  const rotate = useTransform(scrollYProgress, [0.1, 0.12, 0.3], [-28, -28, 0])
-  const textTransform = useTransform(scrollYProgress, [0, 0.3], [0, 100])
-  const textOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
+  const translate = useTransform(
+    scrollYProgress,
+    isMobile ? [0.15, 0.6] : [0, 1],
+    [0, isMobile ? 300 : 1500],
+  )
+  const rotate = useTransform(
+    scrollYProgress,
+    isMobile ? [0.15, 0.18, 0.4] : [0.1, 0.12, 0.3],
+    [-28, -28, 0],
+  )
+  const textTransform = useTransform(scrollYProgress, isMobile ? [0.1, 0.35] : [0, 0.3], [0, 100])
+  const textOpacity = useTransform(scrollYProgress, isMobile ? [0.1, 0.3] : [0, 0.2], [1, 0])
 
   return (
     <div
       ref={ref}
-      className="flex min-h-[200vh] shrink-0 transform flex-col items-center justify-start py-20 perspective-midrange md:py-80"
+      className="flex min-h-[120vh] shrink-0 transform flex-col items-center justify-start py-10 perspective-midrange sm:min-h-[150vh] sm:py-20 md:min-h-[200vh] md:py-80"
     >
       <motion.h2
         style={{
