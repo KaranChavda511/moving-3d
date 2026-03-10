@@ -23,14 +23,15 @@ const desktopPositions = {
   "bottom-right": { top: "68%", right: "4%" },
 }
 
-// Mobile: tighter 2-column grid that fits small screens
+// Mobile: 3 rows with text absolutely placed at 24% between row 1 and row 2
+// Row 1: 0-20%, Text: 24-45%, Row 2: 48-68%, Row 3: 70-90%
 const mobilePositions = {
-  "top-left": { top: "5%", left: "2%" },
-  "top-right": { top: "5%", right: "2%" },
-  "mid-left": { top: "35%", left: "0%" },
-  "mid-right": { top: "35%", right: "0%" },
-  "bottom-left": { top: "65%", left: "2%" },
-  "bottom-right": { top: "65%", right: "2%" },
+  "top-left": { top: "2%", left: "3%" },
+  "top-right": { top: "2%", right: "3%" },
+  "mid-left": { top: "46%", left: "-1%" },
+  "mid-right": { top: "46%", right: "-1%" },
+  "bottom-left": { top: "70%", left: "3%" },
+  "bottom-right": { top: "70%", right: "3%" },
 }
 
 const positionOrder = [
@@ -244,7 +245,7 @@ const ParallaxImage = memo(function ParallaxImage({
         width={320}
         height={240}
         loading="lazy"
-        className={`aspect-4/3 h-24 w-[42vw] max-w-32 rounded-lg object-cover shadow-sm ring-1 ring-black/10 sm:h-40 sm:max-w-56 md:h-52 md:max-w-80 dark:ring-white/10 ${imageClassName || ""}`}
+        className={`aspect-4/3 h-40 w-[45vw] rounded-xl object-cover shadow-lg ring-1 ring-white/10 sm:h-40 sm:max-w-56 sm:rounded-lg sm:shadow-sm sm:ring-black/10 md:h-52 md:max-w-80 dark:sm:ring-white/10 ${imageClassName || ""}`}
       />
     </motion.div>
   )

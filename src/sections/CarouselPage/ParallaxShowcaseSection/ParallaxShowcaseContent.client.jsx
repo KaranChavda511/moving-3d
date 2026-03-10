@@ -29,7 +29,7 @@ const ParallaxShowcaseContent = () => {
         images={images}
         onTiltStatusChange={handleTiltStatusChange}
       />
-      <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 text-center">
+      <div className="absolute left-0 right-0 top-[24%] flex flex-col items-center gap-4 px-4 text-center md:relative md:top-auto md:mx-auto md:max-w-4xl">
         <h2 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_0_20px_rgba(0,0,0,0.8)] sm:text-4xl md:text-6xl">
           Immersive Parallax <span className="text-primary">Gallery</span>
         </h2>
