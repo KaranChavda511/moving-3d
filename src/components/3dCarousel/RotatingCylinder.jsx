@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber"
 import { useTexture } from "@react-three/drei"
-import { useRef } from "react"
+import { useRef, useMemo } from "react"
 import { CylinderGeometry, DoubleSide } from "three"
 
 const images = [
@@ -13,25 +13,29 @@ const images = [
 ]
 
 function CurvedPanel({ texture, angle, radius }) {
-  const segmentAngle = (Math.PI * 2) / images.length
-  const gap = 0.15
+  const geometry = useMemo(() => {
+    const segmentAngle = (Math.PI * 2) / images.length
+    const gap = 0.15
 
-  const geometry = new CylinderGeometry(
-    radius,
-    radius,
-    1.8,
-    32,
-    1,
-    true,
-    angle - (segmentAngle - gap) / 2,
-    segmentAngle - gap,
-  )
+    const geo = new CylinderGeometry(
+      radius,
+      radius,
+      1.8,
+      32,
+      1,
+      true,
+      angle - (segmentAngle - gap) / 2,
+      segmentAngle - gap,
+    )
 
-  // Flip UVs so texture maps correctly on the outside
-  const uvs = geometry.attributes.uv
-  for (let i = 0; i < uvs.count; i++) {
-    uvs.setX(i, 1 - uvs.getX(i))
-  }
+    // Flip UVs so texture maps correctly on the outside
+    const uvs = geo.attributes.uv
+    for (let i = 0; i < uvs.count; i++) {
+      uvs.setX(i, 1 - uvs.getX(i))
+    }
+
+    return geo
+  }, [angle, radius])
 
   return (
     <mesh geometry={geometry}>
