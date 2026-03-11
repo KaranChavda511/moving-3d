@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 
 const WORLD_DOTS = generateDots()
 
@@ -8,15 +8,20 @@ const WORLD_DOTS = generateDots()
    ANIMATED SECURITY DOTTED LINE
    ═══════════════════════════════ */
 const AnimLine = ({ delay = 0 }) => {
-  const [pos, setPos] = useState(-100)
+  const lineRef = useRef(null)
   const raf = useRef(null)
 
   useEffect(() => {
     let running = true
+    let pos = -100
     const timer = setTimeout(() => {
       const go = () => {
         if (!running) return
-        setPos((p) => (p > 400 ? -100 : p + 1.5))
+        pos = pos > 400 ? -100 : pos + 1.5
+        if (lineRef.current) {
+          lineRef.current.style.transform = `translateX(${pos}%)`
+          lineRef.current.style.opacity = Math.min(1, Math.max(0, (pos + 100) / 200))
+        }
         raf.current = requestAnimationFrame(go)
       }
       raf.current = requestAnimationFrame(go)
@@ -27,13 +32,13 @@ const AnimLine = ({ delay = 0 }) => {
   return (
     <div className="relative h-px w-full overflow-hidden">
       <div className="absolute inset-0 border-t border-dotted" style={{ borderColor: "#444" }} />
-      <div className="absolute top-0 h-px"
+      <div ref={lineRef} className="absolute top-0 h-px"
         style={{
           width: 40,
           background: "linear-gradient(to right, transparent, #6366f1 20%, #6366f1 80%, transparent)",
           maskImage: "repeating-linear-gradient(to right, black 0px, black 2px, transparent 2px, transparent 5px)",
-          transform: `translateX(${pos}%)`,
-          opacity: Math.min(1, Math.max(0, (pos + 100) / 200)),
+          transform: "translateX(-100%)",
+          opacity: 0,
         }} />
     </div>
   )
@@ -94,13 +99,13 @@ export const SecurityCard = () => (
    WORLD DOTS GENERATOR
    ════════════════════ */
 function generateDots() {
-  const seed = (x) => Math.abs(Math.sin(x * 12.9898 + x * 78.233) * 43758.5453 % 1)
+  const seed = (x) => +(Math.abs(Math.sin(x * 12.9898 + x * 78.233) * 43758.5453 % 1).toFixed(6))
   const dots = []
   const add = (xMin, xMax, yMin, yMax, count) => {
     for (let i = 0; i < count; i++) {
       dots.push({
-        cx: xMin + seed(dots.length + i * 7 + 1) * (xMax - xMin),
-        cy: yMin + seed(dots.length + i * 13 + 2) * (yMax - yMin),
+        cx: +(xMin + seed(dots.length + i * 7 + 1) * (xMax - xMin)).toFixed(4),
+        cy: +(yMin + seed(dots.length + i * 13 + 2) * (yMax - yMin)).toFixed(4),
       })
     }
   }
@@ -117,14 +122,16 @@ function generateDots() {
    WORLD MAP CARD
    ════════════════════ */
 export const WorldMapCard = () => {
-  const [pulse, setPulse] = useState(1)
+  const pulseRef = useRef(null)
   const raf = useRef(null)
 
   useEffect(() => {
     let t = 0
     const go = () => {
       t += 0.02
-      setPulse(1 + Math.sin(t) * 0.3)
+      if (pulseRef.current) {
+        pulseRef.current.style.transform = `scale(${1 + Math.sin(t) * 0.3})`
+      }
       raf.current = requestAnimationFrame(go)
     }
     raf.current = requestAnimationFrame(go)
@@ -144,8 +151,8 @@ export const WorldMapCard = () => {
           </svg>
           <div className="absolute flex items-center justify-center"
             style={{ transform: "translate(-50%,-50%)", left: "82%", top: "55%" }}>
-            <div className="absolute rounded-full"
-              style={{ width: 32, height: 32, background: "#333", transform: `scale(${pulse})` }} />
+            <div ref={pulseRef} className="absolute rounded-full"
+              style={{ width: 32, height: 32, background: "#333" }} />
             <div className="relative overflow-hidden rounded-full"
               style={{ width: 28, height: 28, boxShadow: "0 0 0 2px #555, 0 0 0 4px #222" }}>
               <div className="h-full w-full bg-linear-to-br from-green-300 to-teal-500" />
