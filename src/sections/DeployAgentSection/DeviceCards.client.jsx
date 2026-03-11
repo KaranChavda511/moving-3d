@@ -1,6 +1,65 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+
+/* ═══════════════════════════════════════════════════════
+   useActiveState — hover on desktop, viewport on mobile
+   Only ONE device can be active at a time on mobile.
+   ═══════════════════════════════════════════════════════ */
+const subscribers = new Set()
+
+const notifyActive = (activeId) => {
+  subscribers.forEach((sub) => sub(activeId))
+}
+
+const useActiveState = (id) => {
+  const [active, setActive] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const ref = useRef(null)
+  const ratioRef = useRef(0)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.matchMedia("(max-width: 768px)").matches)
+    checkMobile()
+    const mql = window.matchMedia("(max-width: 768px)")
+    mql.addEventListener("change", checkMobile)
+    return () => mql.removeEventListener("change", checkMobile)
+  }, [])
+
+  // Listen for "another device became active" — deactivate self
+  useEffect(() => {
+    if (!isMobile) return
+    const handler = (activeId) => {
+      if (activeId !== id) setActive(false)
+    }
+    subscribers.add(handler)
+    return () => subscribers.delete(handler)
+  }, [isMobile, id])
+
+  useEffect(() => {
+    if (!isMobile || !ref.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        ratioRef.current = entry.intersectionRatio
+        if (entry.isIntersecting) {
+          setActive(true)
+          notifyActive(id)
+        } else {
+          setActive(false)
+        }
+      },
+      { rootMargin: "-40% 0px -40% 0px", threshold: 0 }
+    )
+    observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [isMobile, id])
+
+  const hoverProps = isMobile
+    ? {}
+    : { onMouseEnter: () => setActive(true), onMouseLeave: () => setActive(false) }
+
+  return { active, ref, hoverProps }
+}
 
 /* ═══════════════════════════════════════════════
    SCREEN IMAGE — the portrait shown on screens
@@ -60,12 +119,10 @@ const DynamicIsland = ({ width = 40, active = false, label = "Connected" }) => (
    PHONE DEVICE — iPhone with Dynamic Island
    ══════════════════════════════════════════════ */
 export const PhoneDevice = () => {
-  const [hovered, setHovered] = useState(false)
+  const { active, ref, hoverProps } = useActiveState("phone")
 
   return (
-    <div className="flex min-w-60 flex-col items-center"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}>
+    <div ref={ref} className="flex min-w-60 flex-col items-center" {...hoverProps}>
       <div style={{ cursor: "pointer" }}>
         <div className="relative mx-auto" style={{ width: 96 }}>
           <div className="absolute flex flex-col" style={{ top: 40, left: -2, gap: 6 }}>
@@ -87,14 +144,14 @@ export const PhoneDevice = () => {
               style={{ height: 160, borderRadius: 16, background: "#171717" }}>
               <div className="absolute inset-0"
                 style={{
-                  opacity: hovered ? 1 : 0,
-                  filter: hovered ? "blur(0px)" : "blur(8px)",
+                  opacity: active ? 1 : 0,
+                  filter: active ? "blur(0px)" : "blur(8px)",
                   transition: "opacity 0.6s ease-out, filter 0.6s ease-out",
                 }}>
                 <ScreenImage />
               </div>
               <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-1.5">
-                <DynamicIsland width={40} active={hovered} label="Connected" />
+                <DynamicIsland width={40} active={active} label="Connected" />
               </div>
             </div>
           </div>
@@ -118,12 +175,10 @@ export const PhoneDevice = () => {
    LAPTOP DEVICE — MacBook with lid-open hover animation
    ═══════════════════════════════════════════════════════ */
 export const LaptopDevice = () => {
-  const [hovered, setHovered] = useState(false)
+  const { active, ref, hoverProps } = useActiveState("laptop")
 
   return (
-    <div className="flex min-w-60 flex-col items-center"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}>
+    <div ref={ref} className="flex min-w-60 flex-col items-center" {...hoverProps}>
       <div style={{ cursor: "pointer" }}>
         <div className="mx-auto" style={{ width: 320, perspective: 800 }}>
           <div className="mx-auto overflow-hidden p-1.5"
@@ -135,7 +190,7 @@ export const LaptopDevice = () => {
               background: "#333",
               boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)",
               transformOrigin: "center bottom",
-              transform: hovered ? "rotateX(0deg)" : "rotateX(-60deg)",
+              transform: active ? "rotateX(0deg)" : "rotateX(-60deg)",
               transition: "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
             }}>
             <div className="relative h-full w-full overflow-hidden"
@@ -148,14 +203,14 @@ export const LaptopDevice = () => {
               }}>
               <div className="absolute inset-0"
                 style={{
-                  opacity: hovered ? 1 : 0,
-                  filter: hovered ? "blur(0px)" : "blur(8px)",
+                  opacity: active ? 1 : 0,
+                  filter: active ? "blur(0px)" : "blur(8px)",
                   transition: "opacity 0.6s ease-out 0.3s, filter 0.6s ease-out 0.3s",
                 }}>
                 <ScreenImage />
               </div>
               <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-1.5">
-                <DynamicIsland width={48} active={hovered} label="Airpods Connected" />
+                <DynamicIsland width={48} active={active} label="Airpods Connected" />
               </div>
             </div>
           </div>
@@ -190,12 +245,10 @@ export const LaptopDevice = () => {
    TABLET DEVICE — iPad with Dynamic Island
    ════════════════════════════════════════════ */
 export const TabletDevice = () => {
-  const [hovered, setHovered] = useState(false)
+  const { active, ref, hoverProps } = useActiveState("tablet")
 
   return (
-    <div className="flex min-w-60 flex-col items-center"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}>
+    <div ref={ref} className="flex min-w-60 flex-col items-center" {...hoverProps}>
       <div style={{ cursor: "pointer" }}>
         <div className="relative mx-auto" style={{ width: 224 }}>
           <div className="absolute flex flex-col" style={{ top: 24, right: -2, gap: 6 }}>
@@ -216,14 +269,14 @@ export const TabletDevice = () => {
               style={{ height: 144, borderRadius: 12, background: "#171717" }}>
               <div className="absolute inset-0"
                 style={{
-                  opacity: hovered ? 1 : 0,
-                  filter: hovered ? "blur(0px)" : "blur(8px)",
+                  opacity: active ? 1 : 0,
+                  filter: active ? "blur(0px)" : "blur(8px)",
                   transition: "opacity 0.6s ease-out, filter 0.6s ease-out",
                 }}>
                 <ScreenImage />
               </div>
               <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-1.5">
-                <DynamicIsland width={32} active={hovered} label="Connected" />
+                <DynamicIsland width={32} active={active} label="Connected" />
               </div>
             </div>
           </div>
