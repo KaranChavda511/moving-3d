@@ -4,6 +4,7 @@ import ParallaxShowcaseSection from "@/sections/CarouselPage/ParallaxShowcaseSec
 import DraggableGallerySection from "@/sections/CarouselPage/DraggableGallerySection"
 import MacbookScrollSection from "@/sections/CarouselPage/MacbookScrollSection"
 import HeroParallaxSection from "@/sections/CarouselPage/HeroParallaxSection"
+import DeployAgentsSection from "@/sections/DeployAgentSection"
 
 export default function CarouselPage() {
   return (
@@ -14,6 +15,7 @@ export default function CarouselPage() {
       <DraggableGallerySection />
       <MacbookScrollSection />
       <HeroParallaxSection />
+      <DeployAgentsSection/>
     </>
   )
 }
