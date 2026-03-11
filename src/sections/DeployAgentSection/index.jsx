@@ -1,12 +1,5 @@
-import AnimatedBeam from "./AnimatedBeam.client"
+import BeamBar from "./BeamBar.client"
 import { PhoneDevice, LaptopDevice, TabletDevice } from "./DeviceCards.client"
-
-const Dot = () => (
-  <div className="flex shrink-0 items-center justify-center rounded-full"
-    style={{ width: 16, height: 16, background: "#333" }}>
-    <div className="rounded-full bg-indigo-500" style={{ width: 8, height: 8 }} />
-  </div>
-)
 
 export default function DeployAgentsSection() {
   return (
@@ -36,20 +29,7 @@ export default function DeployAgentsSection() {
         </div>
 
         {/* Beam connection bar (desktop only) */}
-        <div className="relative mx-auto mb-8 hidden h-12 w-full items-center lg:flex">
-          <div className="relative flex h-full w-full items-center">
-            <div className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
-              style={{ left: "calc(100% / 6)" }}><Dot /></div>
-            <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><Dot /></div>
-            <div className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
-              style={{ left: "calc(500% / 6)" }}><Dot /></div>
-
-            <div className="absolute top-1/2 -translate-y-1/2"
-              style={{ left: "calc(100% / 6)", width: "calc(400% / 6)" }}>
-              <AnimatedBeam id="full" delay={0} />
-            </div>
-          </div>
-        </div>
+        <BeamBar />
 
         {/* Three Device Cards */}
         <div className="mx-auto flex w-full flex-col items-center gap-20 py-4 md:flex-row md:items-end md:justify-center md:gap-12 md:py-10 lg:gap-20">
