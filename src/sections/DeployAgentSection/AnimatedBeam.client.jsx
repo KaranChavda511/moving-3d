@@ -1,17 +1,32 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 
 const AnimatedBeam = ({ id, delay = 0 }) => {
-  const [offset, setOffset] = useState(-20)
+  const svgRef = useRef(null)
   const raf = useRef(null)
 
   useEffect(() => {
     let running = true
+    let offset = -20
+
+    // Cache the 4 stop elements for direct attribute updates (no re-render)
+    const svg = svgRef.current
+    if (!svg) return
+
+    const stops = svg.querySelectorAll(`[data-beam-stop]`)
+    const s0 = stops[0], s1 = stops[1], s2 = stops[2], s3 = stops[3]
+
     const timer = setTimeout(() => {
       const animate = () => {
         if (!running) return
-        setOffset((prev) => (prev > 120 ? -20 : prev + 0.4))
+        offset = offset > 120 ? -20 : offset + 0.4
+        if (s0) {
+          s0.setAttribute("offset", `${offset}%`)
+          s1.setAttribute("offset", `${offset + 5}%`)
+          s2.setAttribute("offset", `${offset + 15}%`)
+          s3.setAttribute("offset", `${offset + 20}%`)
+        }
         raf.current = requestAnimationFrame(animate)
       }
       raf.current = requestAnimationFrame(animate)
@@ -21,10 +36,10 @@ const AnimatedBeam = ({ id, delay = 0 }) => {
       clearTimeout(timer)
       if (raf.current) cancelAnimationFrame(raf.current)
     }
-  }, [delay])
+  }, [delay, id])
 
   return (
-    <svg className="h-12 w-full" viewBox="0 0 600 80" fill="none" preserveAspectRatio="none">
+    <svg ref={svgRef} className="h-12 w-full" viewBox="0 0 600 80" fill="none" preserveAspectRatio="none">
       <defs>
         <linearGradient id={`bg-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="transparent" />
@@ -38,10 +53,10 @@ const AnimatedBeam = ({ id, delay = 0 }) => {
           <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
         <linearGradient id={`bf-${id}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="600" y2="0">
-          <stop offset={`${offset}%`} stopColor="black" />
-          <stop offset={`${offset + 5}%`} stopColor="white" />
-          <stop offset={`${offset + 15}%`} stopColor="white" />
-          <stop offset={`${offset + 20}%`} stopColor="black" />
+          <stop data-beam-stop offset="-20%" stopColor="black" />
+          <stop data-beam-stop offset="-15%" stopColor="white" />
+          <stop data-beam-stop offset="-5%" stopColor="white" />
+          <stop data-beam-stop offset="0%" stopColor="black" />
         </linearGradient>
         <mask id={`bm-${id}`}>
           <path d="M 0 40 C 75 40 75 10 150 10 S 225 40 300 40 S 375 10 450 10 S 525 40 600 40"

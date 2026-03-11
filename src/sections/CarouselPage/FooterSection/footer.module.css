@@ -1,0 +1,35 @@
+.socialLink {
+  background: rgba(255, 255, 255, 0.04);
+  color: #a3a3a3;
+}
+.socialLink:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+
+.navLink {
+  color: #a3a3a3;
+}
+.navLink:hover {
+  color: #e5e5e5;
+}
+
+.emailInput {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #e5e5e5;
+  min-width: 0;
+}
+.emailInput::placeholder {
+  color: #525252;
+}
+.emailInput:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.bottomLink {
+  color: #525252;
+}
+.bottomLink:hover {
+  color: #a3a3a3;
+}

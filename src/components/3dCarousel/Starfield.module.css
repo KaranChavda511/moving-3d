@@ -19,6 +19,8 @@
   background: transparent;
   border-radius: 50%;
   animation: twinkle 4s ease-in-out infinite;
+  will-change: opacity;
+  transform: translateZ(0);
   box-shadow:
     1309px 228px #ffffff,
     1518px 563px #ffffff,
@@ -152,6 +154,8 @@
   border-radius: 50%;
   animation: twinkle 3s ease-in-out infinite;
   animation-delay: 1s;
+  will-change: opacity;
+  transform: translateZ(0);
   box-shadow:
     1107px 1712px #ffffff,
     1984px 191px #ffffff,
@@ -225,6 +229,8 @@
   border-radius: 50%;
   animation: twinkle 5s ease-in-out infinite;
   animation-delay: 2s;
+  will-change: opacity;
+  transform: translateZ(0);
   box-shadow:
     1192px 1131px #ffffff,
     880px 261px #ffffff,

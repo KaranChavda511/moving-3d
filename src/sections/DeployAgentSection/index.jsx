@@ -1,6 +1,5 @@
 import AnimatedBeam from "./AnimatedBeam.client"
 import { PhoneDevice, LaptopDevice, TabletDevice } from "./DeviceCards.client"
-import { SecurityCard, WorldMapCard, ComplianceCard } from "./FeatureCards.client"
 
 const Dot = () => (
   <div className="flex shrink-0 items-center justify-center rounded-full"
@@ -11,7 +10,16 @@ const Dot = () => (
 
 export default function DeployAgentsSection() {
   return (
-    <div style={{ background: "#0a0a0a", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: "#e5e5e5" }}>
+    <div style={{
+      background: [
+        'radial-gradient(ellipse at 40% 20%, #1a2744 0%, transparent 50%)',
+        'radial-gradient(ellipse at 70% 70%, #162033 0%, transparent 45%)',
+        'radial-gradient(circle at 20% 60%, #1c2540 0%, transparent 35%)',
+        'linear-gradient(180deg, #050810 0%, #0c1220 40%, #070b13 70%, #050810 100%)',
+      ].join(', '),
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      color: "#e5e5e5",
+    }}>
       <div className="mx-auto px-4 py-10 md:px-8 md:py-20 lg:py-32" style={{ maxWidth: 1280 }}>
 
         {/* Header */}
@@ -48,13 +56,6 @@ export default function DeployAgentsSection() {
           <PhoneDevice />
           <LaptopDevice />
           <TabletDevice />
-        </div>
-
-        {/* Feature Cards */}
-        <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
-          <SecurityCard />
-          <WorldMapCard />
-          <ComplianceCard />
         </div>
       </div>
     </div>

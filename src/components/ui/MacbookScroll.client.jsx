@@ -115,6 +115,7 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
           style={{
             perspective: "1200px",
             rotateX: cameraTilt,
+            willChange: "transform",
           }}
           className="flex items-center justify-center"
         >
@@ -126,6 +127,7 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
                 rotateX: lidRotate,
                 transformOrigin: "bottom center",
                 transformStyle: "preserve-3d",
+                willChange: "transform",
               }}
               className="relative -mb-px w-64 sm:w-96 md:w-lg"
             >

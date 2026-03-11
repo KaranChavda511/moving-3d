@@ -5,6 +5,7 @@ import DraggableGallerySection from "@/sections/CarouselPage/DraggableGallerySec
 import MacbookScrollSection from "@/sections/CarouselPage/MacbookScrollSection"
 import HeroParallaxSection from "@/sections/CarouselPage/HeroParallaxSection"
 import DeployAgentsSection from "@/sections/DeployAgentSection"
+import FooterSection from "@/sections/CarouselPage/FooterSection"
 
 export default function CarouselPage() {
   return (
@@ -15,7 +16,8 @@ export default function CarouselPage() {
       <DraggableGallerySection />
       <MacbookScrollSection />
       <HeroParallaxSection />
-      <DeployAgentsSection/>
+      <DeployAgentsSection />
+      <FooterSection />
     </>
   )
 }

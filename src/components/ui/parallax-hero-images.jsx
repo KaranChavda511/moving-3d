@@ -245,6 +245,7 @@ const ParallaxImage = memo(function ParallaxImage({
         width={320}
         height={240}
         loading="lazy"
+        sizes="(max-width: 640px) 45vw, (max-width: 768px) 224px, 320px"
         className={`aspect-4/3 h-40 w-[45vw] rounded-xl object-cover shadow-lg ring-1 ring-white/10 sm:h-40 sm:max-w-56 sm:rounded-lg sm:shadow-sm sm:ring-black/10 md:h-52 md:max-w-80 dark:sm:ring-white/10 ${imageClassName || ""}`}
       />
     </motion.div>

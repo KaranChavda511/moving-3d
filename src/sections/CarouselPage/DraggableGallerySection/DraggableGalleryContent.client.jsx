@@ -26,6 +26,7 @@ const DraggableGalleryContent = () => {
                 alt={item.title}
                 width={320}
                 height={320}
+                sizes="(max-width: 640px) 45vw, (max-width: 768px) 50vw, 320px"
                 className="pointer-events-none relative z-10 h-36 w-full rounded-md object-cover sm:h-52 md:h-72 md:w-72"
               />
               <h3 className="mt-2 text-center text-sm font-bold text-white/80 sm:text-lg md:mt-4 md:text-2xl">
@@ -49,6 +50,7 @@ const DraggableGalleryContent = () => {
                 alt={item.title}
                 width={320}
                 height={320}
+                sizes="(max-width: 640px) 45vw, (max-width: 768px) 50vw, 320px"
                 className="pointer-events-none relative z-10 h-36 w-full rounded-md object-cover sm:h-52 md:h-72 md:w-72"
               />
               <h3 className="mt-2 text-center text-sm font-bold text-white/80 sm:text-lg md:mt-4 md:text-2xl">
