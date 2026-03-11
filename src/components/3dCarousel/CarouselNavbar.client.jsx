@@ -35,7 +35,7 @@ export default function CarouselNavbar() {
         ))}
       </div>
 
-      <button className="rounded-lg bg-gradient-to-br from-[#4f8cff] to-[#2563eb] px-5 py-2 text-sm font-medium text-white shadow-[0_8px_24px_rgba(79,140,255,0.35)] transition-all hover:shadow-[0_12px_32px_rgba(79,140,255,0.5)]">
+      <button className="rounded-lg bg-linear-to-br from-[#4f8cff] to-[#2563eb] px-5 py-2 text-sm font-medium text-white shadow-[0_8px_24px_rgba(79,140,255,0.35)] transition-all hover:shadow-[0_12px_32px_rgba(79,140,255,0.5)]">
         Get Started
       </button>
     </nav>
