@@ -102,9 +102,9 @@ export default function FooterSection() {
 
           {/* Navigation */}
           <div className="lg:col-span-3 lg:col-start-6">
-            <h4 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6366f1' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6366f1' }}>
               Navigation
-            </h4>
+            </h3>
             <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-3 sm:flex-col sm:gap-x-0">
               {navLinks.map((link) => (
                 <li key={link.label}>
@@ -118,9 +118,9 @@ export default function FooterSection() {
 
           {/* Newsletter */}
           <div className="sm:col-span-2 lg:col-span-4">
-            <h4 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6366f1' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6366f1' }}>
               Stay updated
-            </h4>
+            </h3>
             <p className="mt-4 text-sm" style={{ color: '#a3a3a3' }}>
               Get notified about new components and updates.
             </p>

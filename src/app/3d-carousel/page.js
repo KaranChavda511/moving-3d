@@ -9,7 +9,7 @@ import FooterSection from "@/sections/CarouselPage/FooterSection"
 
 export default function CarouselPage() {
   return (
-    <>
+    <main>
       <CarouselHeroSection />
       <FeaturesSection />
       <ParallaxShowcaseSection />
@@ -18,6 +18,6 @@ export default function CarouselPage() {
       <HeroParallaxSection />
       <DeployAgentsSection />
       <FooterSection />
-    </>
+    </main>
   )
 }

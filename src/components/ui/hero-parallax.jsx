@@ -106,9 +106,9 @@ export const HeroParallax = ({ products }) => {
 const Header = () => {
   return (
     <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-10 sm:py-20 md:py-40">
-      <h1 className="text-3xl font-bold text-white sm:text-5xl md:text-7xl">
+      <h2 className="text-3xl font-bold text-white sm:text-5xl md:text-7xl">
         The Ultimate <br /> development studio
-      </h1>
+      </h2>
       <p className="mt-4 max-w-2xl text-sm text-neutral-200 sm:mt-6 sm:text-base md:mt-8 md:text-xl">
         We build beautiful products with the latest technologies and frameworks.
         We are a team of passionate developers and designers that love to build
@@ -143,9 +143,9 @@ const ProductCard = ({ product, translate }) => {
         />
       </a>
       <div className="pointer-events-none absolute inset-0 h-full w-full rounded-lg bg-black opacity-0 group-hover/product:opacity-80" />
-      <h2 className="absolute bottom-2 left-2 text-sm text-white opacity-0 group-hover/product:opacity-100 sm:bottom-4 sm:left-4 sm:text-base">
+      <h3 className="absolute bottom-2 left-2 text-sm text-white opacity-0 group-hover/product:opacity-100 sm:bottom-4 sm:left-4 sm:text-base">
         {product.title}
-      </h2>
+      </h3>
     </motion.div>
   )
 }

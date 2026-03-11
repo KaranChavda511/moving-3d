@@ -54,7 +54,7 @@ export default function FeatureCards() {
         >
           <div className="shrink-0 md:mb-1">{feature.icon}</div>
           <div>
-            <h3 className="text-sm font-semibold text-white">{feature.title}</h3>
+            <h2 className="text-sm font-semibold text-white">{feature.title}</h2>
             <p className="text-xs leading-relaxed text-gray-400">
               {feature.description}
             </p>

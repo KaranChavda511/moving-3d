@@ -25,7 +25,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" style={{ backgroundColor: '#050810' }}>
+    <html lang="en" style={{ backgroundColor: '#050810', position: 'relative' }}>
       <head>
         <meta name="theme-color" content="#050810" />
       </head>
