@@ -92,7 +92,11 @@ const ScreenImage = () => (
    ═══════════════════════════════════════ */
 const DynamicIsland = ({ width = 40, active = false, label = "Connected" }) => (
   <div className="relative overflow-hidden bg-black"
-    style={{ width: `${width}px`, height: "10px", borderRadius: "5px" }}>
+    style={{
+      width: `${width}px`, height: "10px", borderRadius: "5px",
+      opacity: active ? 1 : 0,
+      transition: "opacity 0.5s ease-out",
+    }}>
     <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
       style={{ opacity: active ? 0 : 1 }}>
       <div className="flex items-center" style={{ gap: "2px" }}>
