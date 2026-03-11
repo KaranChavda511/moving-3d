@@ -90,34 +90,75 @@ const ScreenImage = () => (
 /* ═══════════════════════════════════════
    DYNAMIC ISLAND — iPhone-style notch
    ═══════════════════════════════════════ */
-const DynamicIsland = ({ width = 40, active = false, label = "Connected" }) => (
-  <div className="relative overflow-hidden bg-black"
-    style={{
-      width: `${width}px`, height: "10px", borderRadius: "5px",
-      opacity: active ? 1 : 0,
-      transition: "opacity 0.5s ease-out",
-    }}>
-    <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
-      style={{ opacity: active ? 0 : 1 }}>
-      <div className="flex items-center" style={{ gap: "2px" }}>
-        <div className="rounded-full bg-neutral-700" style={{ width: 4, height: 4 }} />
-        <div className="rounded-full bg-neutral-600" style={{ width: 2, height: 2 }} />
+const ISLAND_DOT_WIDTH = 24
+const DynamicIsland = ({ width = 56, active = false, label = "Connected" }) => {
+  const [showTextReady, setShowTextReady] = useState(false)
+
+  useEffect(() => {
+    if (!active) return
+    const timer = setTimeout(() => setShowTextReady(true), 1000)
+    return () => {
+      clearTimeout(timer)
+      setShowTextReady(false)
+    }
+  }, [active])
+
+  const showText = active && showTextReady
+  // Inactive: hidden pill, Active+loading: small dot-sized, Active+text: full width
+  const currentWidth = !active ? ISLAND_DOT_WIDTH : showText ? width : ISLAND_DOT_WIDTH
+  const currentHeight = !active ? 10 : showText ? 16 : 10
+
+  return (
+    <div className="relative overflow-hidden bg-black"
+      style={{
+        width: currentWidth,
+        height: currentHeight,
+        borderRadius: currentHeight / 2,
+        opacity: active ? 1 : 0,
+        transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1), height 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-out",
+      }}>
+      {/* Loading dots */}
+      <div className="absolute inset-0 flex items-center justify-center"
+        style={{
+          opacity: active && !showText ? 1 : 0,
+          transition: "opacity 0.3s ease-out",
+        }}>
+        <div className="flex items-center" style={{ gap: "3px" }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-full bg-neutral-400"
+              style={{
+                width: 3, height: 3,
+                animation: "islandPulse 1s ease-in-out infinite",
+                animationDelay: `${i * 0.2}s`,
+              }} />
+          ))}
+        </div>
+        <style>{`
+          @keyframes islandPulse {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1.2); }
+          }
+        `}</style>
+      </div>
+      {/* Label text */}
+      <div className="absolute inset-0 flex items-center justify-center"
+        style={{
+          opacity: showText ? 1 : 0,
+          transition: "opacity 0.4s ease-out 0.15s",
+        }}>
+        <span className="whitespace-nowrap font-medium text-white" style={{ fontSize: "6px", lineHeight: 1 }}>
+          {label}
+        </span>
+        {label.includes("Airpods") && (
+          <div className="ml-0.5 flex items-center rounded-sm border border-green-500"
+            style={{ width: 12, height: 6 }}>
+            <div className="bg-green-500" style={{ width: "85%", height: "100%" }} />
+          </div>
+        )}
       </div>
     </div>
-    <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
-      style={{ opacity: active ? 1 : 0 }}>
-      <span className="font-medium text-white" style={{ fontSize: "3px", lineHeight: 1 }}>
-        {label}
-      </span>
-      {label.includes("Airpods") && (
-        <div className="ml-0.5 flex items-center rounded-sm border border-green-500"
-          style={{ width: 8, height: 4 }}>
-          <div className="bg-green-500" style={{ width: "85%", height: "100%" }} />
-        </div>
-      )}
-    </div>
-  </div>
-)
+  )
+}
 
 /* ══════════════════════════════════════════════
    PHONE DEVICE — iPhone with Dynamic Island
@@ -126,26 +167,26 @@ export const PhoneDevice = () => {
   const { active, ref, hoverProps } = useActiveState("phone")
 
   return (
-    <div ref={ref} className="flex min-w-60 flex-col items-center" {...hoverProps}>
+    <div ref={ref} className="flex flex-col items-center" {...hoverProps}>
       <div style={{ cursor: "pointer" }}>
-        <div className="relative mx-auto" style={{ width: 96 }}>
-          <div className="absolute flex flex-col" style={{ top: 40, left: -2, gap: 6 }}>
-            <div className="rounded-l-sm" style={{ width: 2, height: 10, background: "#525252" }} />
-            <div className="rounded-l-sm" style={{ width: 2, height: 16, background: "#525252" }} />
-            <div className="rounded-l-sm" style={{ width: 2, height: 16, background: "#525252" }} />
+        <div className="relative mx-auto" style={{ width: 125 }}>
+          <div className="absolute flex flex-col" style={{ top: 50, left: -2, gap: 8 }}>
+            <div className="rounded-l-sm" style={{ width: 2, height: 12, background: "#525252" }} />
+            <div className="rounded-l-sm" style={{ width: 2, height: 20, background: "#525252" }} />
+            <div className="rounded-l-sm" style={{ width: 2, height: 20, background: "#525252" }} />
           </div>
-          <div className="absolute" style={{ top: 56, right: -2 }}>
-            <div className="rounded-r-sm" style={{ width: 2, height: 24, background: "#525252" }} />
+          <div className="absolute" style={{ top: 72, right: -2 }}>
+            <div className="rounded-r-sm" style={{ width: 2, height: 32, background: "#525252" }} />
           </div>
 
           <div className="p-1 shadow-sm"
             style={{
-              borderRadius: 20,
+              borderRadius: 26,
               background: "#333",
               boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)",
             }}>
             <div className="relative overflow-hidden"
-              style={{ height: 160, borderRadius: 16, background: "#171717" }}>
+              style={{ height: 210, borderRadius: 22, background: "#171717" }}>
               <div className="absolute inset-0"
                 style={{
                   opacity: active ? 1 : 0,
@@ -154,13 +195,13 @@ export const PhoneDevice = () => {
                 }}>
                 <ScreenImage />
               </div>
-              <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-1.5">
-                <DynamicIsland width={40} active={active} label="Connected" />
+              <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-2">
+                <DynamicIsland width={56} active={active} label="Connected" />
               </div>
             </div>
           </div>
           <div className="absolute inset-x-0 mx-auto rounded-full"
-            style={{ bottom: 6, width: 32, height: 2, background: "#666" }} />
+            style={{ bottom: 7, width: 40, height: 3, background: "#666" }} />
         </div>
       </div>
 
@@ -182,15 +223,15 @@ export const LaptopDevice = () => {
   const { active, ref, hoverProps } = useActiveState("laptop")
 
   return (
-    <div ref={ref} className="flex min-w-60 flex-col items-center" {...hoverProps}>
-      <div style={{ cursor: "pointer" }}>
-        <div className="mx-auto" style={{ width: 320, perspective: 800 }}>
+    <div ref={ref} className="flex flex-col items-center" {...hoverProps}>
+      <div className="w-full" style={{ cursor: "pointer" }}>
+        <div className="mx-auto w-full max-w-90 md:max-w-95" style={{ perspective: 800 }}>
           <div className="mx-auto overflow-hidden p-1.5"
             style={{
               width: "90%",
-              height: 176,
-              borderTopLeftRadius: 8,
-              borderTopRightRadius: 8,
+              height: 200,
+              borderTopLeftRadius: 10,
+              borderTopRightRadius: 10,
               background: "#333",
               boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)",
               transformOrigin: "center bottom",
@@ -200,7 +241,7 @@ export const LaptopDevice = () => {
             <div className="relative h-full w-full overflow-hidden"
               style={{
                 background: "#171717",
-                borderTopLeftRadius: 4,
+                borderTopLeftRadius: 5,
                 borderTopRightRadius: 8,
                 borderBottomLeftRadius: 2,
                 borderBottomRightRadius: 2,
@@ -214,22 +255,22 @@ export const LaptopDevice = () => {
                 <ScreenImage />
               </div>
               <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-1.5">
-                <DynamicIsland width={48} active={active} label="Airpods Connected" />
+                <DynamicIsland width={79} active={active} label="Airpods Connected" />
               </div>
             </div>
           </div>
           <div className="relative w-full"
             style={{
-              height: 14,
+              height: 16,
               borderTopLeftRadius: 6,
               borderTopRightRadius: 6,
-              borderBottomLeftRadius: 24,
-              borderBottomRightRadius: 24,
+              borderBottomLeftRadius: 26,
+              borderBottomRightRadius: 26,
               background: "linear-gradient(to bottom, #404040, #262626)",
               boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)",
             }}>
             <div className="absolute inset-x-0 top-0 mx-auto rounded-b-sm"
-              style={{ width: 48, height: 6, background: "#555" }} />
+              style={{ width: 52, height: 7, background: "#555" }} />
           </div>
         </div>
       </div>
@@ -252,25 +293,25 @@ export const TabletDevice = () => {
   const { active, ref, hoverProps } = useActiveState("tablet")
 
   return (
-    <div ref={ref} className="flex min-w-60 flex-col items-center" {...hoverProps}>
-      <div style={{ cursor: "pointer" }}>
-        <div className="relative mx-auto" style={{ width: 224 }}>
-          <div className="absolute flex flex-col" style={{ top: 24, right: -2, gap: 6 }}>
-            <div className="rounded-r-sm" style={{ width: 2, height: 20, background: "#525252" }} />
-            <div className="rounded-r-sm" style={{ width: 2, height: 20, background: "#525252" }} />
+    <div ref={ref} className="flex flex-col items-center" {...hoverProps}>
+      <div className="w-full" style={{ cursor: "pointer" }}>
+        <div className="relative mx-auto w-full max-w-67.5">
+          <div className="absolute flex flex-col" style={{ top: 28, right: -2, gap: 8 }}>
+            <div className="rounded-r-sm" style={{ width: 2, height: 24, background: "#525252" }} />
+            <div className="rounded-r-sm" style={{ width: 2, height: 24, background: "#525252" }} />
           </div>
-          <div className="absolute" style={{ top: -2, right: 40 }}>
-            <div className="rounded-t-sm" style={{ width: 24, height: 2, background: "#525252" }} />
+          <div className="absolute" style={{ top: -2, right: 48 }}>
+            <div className="rounded-t-sm" style={{ width: 28, height: 2, background: "#525252" }} />
           </div>
 
           <div className="p-1 shadow-sm"
             style={{
-              borderRadius: 16,
+              borderRadius: 20,
               background: "#333",
               boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)",
             }}>
             <div className="relative overflow-hidden"
-              style={{ height: 144, borderRadius: 12, background: "#171717" }}>
+              style={{ height: 180, borderRadius: 16, background: "#171717" }}>
               <div className="absolute inset-0"
                 style={{
                   opacity: active ? 1 : 0,
@@ -279,8 +320,8 @@ export const TabletDevice = () => {
                 }}>
                 <ScreenImage />
               </div>
-              <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-1.5">
-                <DynamicIsland width={32} active={active} label="Connected" />
+              <div className="absolute inset-x-0 top-0 z-20 flex justify-center pt-2">
+                <DynamicIsland width={48} active={active} label="Connected" />
               </div>
             </div>
           </div>

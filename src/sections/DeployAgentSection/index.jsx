@@ -52,7 +52,7 @@ export default function DeployAgentsSection() {
         </div>
 
         {/* Three Device Cards */}
-        <div className="mx-auto grid w-full grid-cols-1 items-center gap-10 overflow-hidden py-4 md:grid-cols-3 md:py-10">
+        <div className="mx-auto flex w-full flex-col items-center gap-20 py-4 md:flex-row md:items-end md:justify-center md:gap-12 md:py-10 lg:gap-20">
           <PhoneDevice />
           <LaptopDevice />
           <TabletDevice />
