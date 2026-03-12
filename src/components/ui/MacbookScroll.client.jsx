@@ -24,30 +24,49 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
   })
 
   // === TIMELINE ===
-  // 0–20%  → closed laptop (lid flat on base, logo visible)
-  // 20–60% → lid opens from hinge
+  // 0–15%  → closed laptop seen from low front angle (like the reference photo)
+  // 15–25% → camera rises while lid starts to open
+  // 25–60% → lid opens fully
   // 60–80% → screen powers on
   // 80–100% → idle
 
-  // Lid rotation: -115° = completely flat/closed (past 90, folded onto base)
+  // Lid rotation: -175° = nearly flat/closed (like reference photo — thin profile)
   // 15° = fully open (screen facing user, tilted back slightly)
   const lidRotate = useTransform(
     scrollYProgress,
-    isMobile ? [0, 0.2, 0.4, 0.55] : [0, 0.2, 0.45, 0.6],
-    [-100, -100, -70, 15],
+    isMobile ? [0, 0.15, 0.35, 0.55] : [0, 0.15, 0.4, 0.6],
+    [-178, -178, -70, 15],
   )
 
-  // Camera tilt — looking down at 60° initially to see the flat closed laptop
+  // Camera tilt — starts at very low front angle (~8°) to match reference photo
+  // (almost eye-level, seeing thin profile + lid surface receding away).
+  // Rises during opening, settles near-level when fully open.
   const cameraTilt = useTransform(
     scrollYProgress,
-    isMobile ? [0, 0.2, 0.55] : [0, 0.2, 0.6],
-    [90, 80, 4],
+    isMobile ? [0, 0.15, 0.3, 0.55] : [0, 0.15, 0.3, 0.6],
+    [10, 10, 55, 4],
   )
+
+  // Perspective origin Y — starts low (front-edge view) then moves to center
+  const perspOriginY = useTransform(
+    scrollYProgress,
+    isMobile ? [0, 0.15, 0.35] : [0, 0.15, 0.4],
+    [180, 180, 50],
+  )
+  const perspOrigin = useTransform(perspOriginY, (v) => `50% ${v}%`)
+
+  // Perspective distance — closer when closed for drama, further when open
+  const perspValue = useTransform(
+    scrollYProgress,
+    isMobile ? [0, 0.15, 0.35] : [0, 0.15, 0.4],
+    [600, 600, 1200],
+  )
+  const perspPx = useTransform(perspValue, (v) => `${v}px`)
 
   // Keyboard cover — hides keyboard when closed
   const coverOpacity = useTransform(
     scrollYProgress,
-    isMobile ? [0.3, 0.45] : [0.3, 0.5],
+    isMobile ? [0.25, 0.4] : [0.25, 0.45],
     [1, 0],
   )
 
@@ -113,13 +132,19 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
         {/* 3D Laptop */}
         <motion.div
           style={{
-            perspective: "1200px",
-            rotateX: cameraTilt,
-            willChange: "transform",
+            perspective: perspPx,
+            perspectiveOrigin: perspOrigin,
           }}
           className="flex items-center justify-center"
         >
-          <div className="relative" style={{ transformStyle: "preserve-3d" }}>
+          <motion.div
+            className="relative"
+            style={{
+              transformStyle: "preserve-3d",
+              rotateX: cameraTilt,
+              willChange: "transform",
+            }}
+          >
 
             {/* === LID === */}
             <motion.div
@@ -169,44 +194,86 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
                 </div>
               </div>
 
-              {/* Logo/back face (visible when closed — faces up) */}
+              {/* Logo/back face (visible when closed — faces up) — Space Gray aluminum */}
               <div
                 className="absolute inset-0 flex h-36 w-full items-center justify-center rounded-t-xl sm:h-52 sm:rounded-t-2xl md:h-72"
                 style={{
                   backfaceVisibility: "hidden",
                   transform: "rotateX(180deg)",
-                  background: "linear-gradient(160deg, #2a2a2c 0%, #1a1a1c 30%, #141416 70%, #0e0e10 100%)",
-                  boxShadow: "0 0 0 1px rgba(255,255,255,0.06) inset",
+                  background: "linear-gradient(175deg, #a0a0a6 0%, #929298 15%, #88888e 35%, #7e7e84 55%, #76767c 75%, #6e6e74 100%)",
+                  boxShadow: "0 0 0 0.5px rgba(255,255,255,0.15) inset, 0 1px 3px rgba(0,0,0,0.4)",
                 }}
               >
+                {/* Subtle spotlight reflection on lid */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-t-xl sm:rounded-t-2xl"
+                  style={{
+                    background: "radial-gradient(ellipse 60% 40% at 50% 40%, rgba(255,255,255,0.08) 0%, transparent 70%)",
+                  }}
+                />
                 <svg
-                  className="h-8 w-8 opacity-15 sm:h-10 sm:w-10 md:h-12 md:w-12"
+                  className="relative h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
                   viewBox="0 0 170 170"
                   fill="currentColor"
                 >
                   <path
                     d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.28 2.13-9.54 3.24-12.8 3.35-4.93.21-9.84-1.96-14.75-6.52-3.13-2.73-7.05-7.41-11.76-14.04-5.05-7.08-9.2-15.29-12.46-24.65-3.49-10.11-5.24-19.9-5.24-29.38 0-10.86 2.35-20.22 7.04-28.06 3.69-6.3 8.6-11.27 14.75-14.91 6.15-3.64 12.8-5.5 19.97-5.63 3.92 0 9.06 1.21 15.43 3.59 6.36 2.39 10.44 3.6 12.24 3.6 1.35 0 5.92-1.42 13.67-4.24 7.33-2.62 13.52-3.7 18.59-3.27 13.73 1.11 24.05 6.52 30.9 16.28-12.28 7.44-18.36 17.86-18.24 31.22.11 10.41 3.89 19.07 11.31 25.95 3.37 3.19 7.12 5.66 11.29 7.41-.91 2.63-1.86 5.14-2.87 7.55zM119.11 7.24c0 8.16-2.98 15.78-8.93 22.83-7.18 8.4-15.86 13.25-25.28 12.49a25.4 25.4 0 0 1-.19-3.09c0-7.83 3.41-16.22 9.47-23.07 3.03-3.45 6.88-6.32 11.56-8.61 4.67-2.26 9.08-3.51 13.24-3.75.12 1.08.13 2.16.13 3.2z"
-                    className="text-white"
+                    className="text-[#58585e]"
                   />
                 </svg>
+              </div>
+
+              {/* Lid front edge — thin aluminum strip visible from low angle */}
+              <div
+                className="absolute inset-x-0 bottom-0 h-36 w-full sm:h-52 md:h-72"
+                style={{
+                  backfaceVisibility: "hidden",
+                  transform: "rotateX(180deg)",
+                  pointerEvents: "none",
+                }}
+              >
+                <div
+                  className="absolute inset-x-0 bottom-0 w-full"
+                  style={{
+                    height: "4px",
+                    transform: "rotateX(90deg)",
+                    transformOrigin: "bottom center",
+                    background: "linear-gradient(180deg, #8a8a90 0%, #6a6a70 100%)",
+                    borderRadius: "0 0 2px 2px",
+                  }}
+                />
               </div>
             </motion.div>
 
             {/* === BASE === rendered at native 32rem, scaled to fit */}
             <div className="h-44 w-64 [--base-s:0.5] sm:h-66 sm:w-96 sm:[--base-s:0.75] md:h-88 md:w-lg md:[--base-s:1]">
               <div
-                className="relative origin-top-left overflow-hidden rounded-b-xl sm:rounded-b-2xl"
+                className="relative origin-top-left overflow-clip rounded-b-xl sm:rounded-b-2xl"
                 style={{
                   width: "32rem",
                   height: "22rem",
                   transform: "scale(var(--base-s))",
-                  background: "linear-gradient(180deg, #3a3a3e 0%, #2c2c30 40%, #252528 100%)",
+                  background: "linear-gradient(180deg, #58585e 0%, #68686e 20%, #76767c 50%, #68686e 80%, #58585e 100%)",
                 }}
               >
-                {/* Cover — hides keyboard when closed */}
+                {/* Front edge — visible thin lip when viewed from low angle */}
+                <div
+                  className="absolute inset-x-0 bottom-0 w-full rounded-b-xl sm:rounded-b-2xl"
+                  style={{
+                    height: "6px",
+                    transform: "rotateX(-90deg) translateZ(3px)",
+                    transformOrigin: "bottom center",
+                    background: "linear-gradient(180deg, #76767c 0%, #5a5a60 50%, #3a3a40 100%)",
+                  }}
+                />
+                {/* Cover — hides keyboard when closed, shows aluminum base bottom */}
                 <motion.div
-                  style={{ opacity: coverOpacity, pointerEvents: "none" }}
-                  className="absolute inset-0 z-10 rounded-b-xl bg-[#131313]"
+                  style={{
+                    opacity: coverOpacity,
+                    pointerEvents: "none",
+                    background: "linear-gradient(180deg, #606066 0%, #6a6a70 30%, #727278 60%, #68686e 100%)",
+                  }}
+                  className="absolute inset-0 z-10 rounded-b-xl"
                 />
 
                 {/* Hinge strip / above keyboard bar */}
@@ -244,7 +311,7 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
 
         {/* Reveal text — appears when laptop is fully open */}
@@ -277,23 +344,35 @@ const SpeakerGrid = () => (
   />
 )
 
-const KBtn = ({ className, children, childrenClassName, backlit = true, wrapperClassName }) => (
-  <div
-    className={`group/key cursor-pointer rounded-sm p-[0.5px] transition-all duration-100 ease-out will-change-transform active:duration-40 ${backlit ? "bg-white/20 shadow-sm shadow-white/40 active:bg-white/10 active:shadow-white/20" : ""} ${wrapperClassName || ""}`}
-    style={{ transformStyle: "preserve-3d" }}
-  >
+const KBtn = ({ className, children, childrenClassName, backlit = true, wrapperClassName }) => {
+  const [pressed, setPressed] = React.useState(false)
+  const onDown = () => setPressed(true)
+  const onUp = () => setPressed(false)
+  return (
     <div
-      className={`flex h-6 w-6 items-center justify-center rounded-[3.5px] bg-[#0A090D] transition-all duration-100 ease-out group-active/key:translate-y-[1.5px] group-active/key:scale-[0.97] group-active/key:bg-[#070709] active:duration-40 ${className || ""}`}
-      style={{
-        boxShadow: "0px -0.5px 2px 0 #0D0D0F inset, -0.5px 0px 2px 0 #0D0D0F inset",
-      }}
+      onPointerDown={onDown}
+      onPointerUp={onUp}
+      onPointerLeave={onUp}
+      className={`group/key cursor-pointer rounded-sm p-[0.5px] transition-all duration-100 ease-out will-change-transform ${backlit ? "bg-white/20 shadow-sm shadow-white/40" : ""} ${wrapperClassName || ""}`}
+      style={pressed && backlit ? { background: "rgba(255,255,255,0.1)", boxShadow: "0 1px 2px rgba(255,255,255,0.2)" } : undefined}
     >
-      <div className={`flex w-full flex-col items-center justify-center text-[5px] text-white transition-opacity duration-100 group-active/key:opacity-80 ${childrenClassName || ""}`}>
-        {children}
+      <div
+        className={`flex h-6 w-6 items-center justify-center rounded-[3.5px] bg-[#0A090D] transition-all duration-100 ease-out ${className || ""}`}
+        style={{
+          boxShadow: "0px -0.5px 2px 0 #0D0D0F inset, -0.5px 0px 2px 0 #0D0D0F inset",
+          ...(pressed ? { transform: "translateY(1.5px) scale(0.97)", background: "#070709" } : {}),
+        }}
+      >
+        <div
+          className={`flex w-full flex-col items-center justify-center text-[5px] text-white transition-opacity duration-100 ${childrenClassName || ""}`}
+          style={pressed ? { opacity: 0.8 } : undefined}
+        >
+          {children}
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}
 
 const OptionKey = ({ className }) => (
   <svg
@@ -310,7 +389,7 @@ const OptionKey = ({ className }) => (
 )
 
 const Keypad = () => (
-  <div className="mx-1 h-full rounded-md bg-[#050505] p-1 transform-[translateZ(0)] will-change-transform">
+  <div className="mx-1 h-full rounded-md bg-[#050505] p-1">
     {/* Function row */}
     <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
       <KBtn className="w-10 items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">esc</KBtn>
