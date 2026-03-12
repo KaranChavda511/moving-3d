@@ -277,9 +277,9 @@ const SpeakerGrid = () => (
   />
 )
 
-const KBtn = ({ className, children, childrenClassName, backlit = true }) => (
+const KBtn = ({ className, children, childrenClassName, backlit = true, wrapperClassName }) => (
   <div
-    className={`group/key cursor-pointer rounded-sm p-[0.5px] transition-all duration-100 ease-out will-change-transform active:duration-40 ${backlit ? "bg-white/20 shadow-sm shadow-white/40 active:bg-white/10 active:shadow-white/20" : ""}`}
+    className={`group/key cursor-pointer rounded-sm p-[0.5px] transition-all duration-100 ease-out will-change-transform active:duration-40 ${backlit ? "bg-white/20 shadow-sm shadow-white/40 active:bg-white/10 active:shadow-white/20" : ""} ${wrapperClassName || ""}`}
     style={{ transformStyle: "preserve-3d" }}
   >
     <div
@@ -310,7 +310,7 @@ const OptionKey = ({ className }) => (
 )
 
 const Keypad = () => (
-  <div className="relative mx-1 h-full rounded-md bg-[#050505] p-1 transform-[translateZ(0)] will-change-transform">
+  <div className="mx-1 h-full rounded-md bg-[#050505] p-1 transform-[translateZ(0)] will-change-transform">
     {/* Function row */}
     <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
       <KBtn className="w-10 items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">esc</KBtn>
@@ -358,52 +358,56 @@ const Keypad = () => (
       <KBtn className="w-[2.85rem] items-end justify-end pr-1 pb-0.5" childrenClassName="items-end">return</KBtn>
     </div>
 
-    {/* Shift row */}
-    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
-      <KBtn className="w-[3.65rem] items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">shift</KBtn>
-      {["Z","X","C","V","B","N","M"].map(k => <KBtn key={k}><span className="block">{k}</span></KBtn>)}
-      <KBtn><span className="block">&lt;</span><span className="block">,</span></KBtn>
-      <KBtn><span className="block">&gt;</span><span className="block">.</span></KBtn>
-      <KBtn><span className="block">?</span><span className="block">/</span></KBtn>
-      <KBtn className="w-[3.65rem] items-end justify-end pr-1 pb-0.5" childrenClassName="items-end">shift</KBtn>
-    </div>
-
-    {/* Bottom row */}
-    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
-      <KBtn childrenClassName="h-full justify-between py-1">
-        <div className="flex w-full justify-end pr-1"><span className="block">fn</span></div>
-        <div className="flex w-full justify-start pl-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18"/></svg></div>
-      </KBtn>
-      <KBtn childrenClassName="h-full justify-between py-1">
-        <div className="flex w-full justify-end pr-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M6 15l6 -6l6 6"/></svg></div>
-        <div className="flex w-full justify-start pl-1"><span className="block">control</span></div>
-      </KBtn>
-      <KBtn childrenClassName="h-full justify-between py-1">
-        <div className="flex w-full justify-end pr-1"><OptionKey className="h-1.5 w-1.5" /></div>
-        <div className="flex w-full justify-start pl-1"><span className="block">option</span></div>
-      </KBtn>
-      <KBtn className="w-8" childrenClassName="h-full justify-between py-1">
-        <div className="flex w-full justify-end pr-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M7 9a2 2 0 1 1 2 -2v10a2 2 0 1 1 -2 -2h10a2 2 0 1 1 -2 2v-10a2 2 0 1 1 2 2h-10"/></svg></div>
-        <div className="flex w-full justify-start pl-1"><span className="block">command</span></div>
-      </KBtn>
-      <KBtn className="w-[8.2rem]" />
-      <KBtn className="w-8" childrenClassName="h-full justify-between py-1">
-        <div className="flex w-full justify-start pl-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M7 9a2 2 0 1 1 2 -2v10a2 2 0 1 1 -2 -2h10a2 2 0 1 1 -2 2v-10a2 2 0 1 1 2 2h-10"/></svg></div>
-        <div className="flex w-full justify-start pl-1"><span className="block">command</span></div>
-      </KBtn>
-      <KBtn childrenClassName="h-full justify-between py-1">
-        <div className="flex w-full justify-start pl-1"><OptionKey className="h-1.5 w-1.5" /></div>
-        <div className="flex w-full justify-start pl-1"><span className="block">option</span></div>
-      </KBtn>
-    </div>
-
-    {/* Arrow keys — absolutely positioned bottom-right, spanning shift + bottom rows */}
-    <div className="absolute bottom-1 right-1 flex flex-col items-center gap-0.5">
-      <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M11.293 7.293a1 1 0 0 1 1.32 -.083l.094 .083l6 6l.083 .094l.054 .077l.054 .096l.017 .036l.027 .067l.032 .108l.01 .053l.01 .06l.004 .057l.002 .059l-.002 .059l-.005 .058l-.009 .06l-.01 .052l-.032 .108l-.027 .067l-.07 .132l-.065 .09l-.073 .081l-.094 .083l-.077 .054l-.096 .054l-.036 .017l-.067 .027l-.108 .032l-.053 .01l-.06 .01l-.057 .004l-.059 .002h-12c-.852 0 -1.297 -.986 -.783 -1.623l.076 -.084l6 -6z"/></svg></KBtn>
-      <div className="flex gap-0.5">
-        <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M13.883 5.007l.058 -.005h.118l.058 .005l.06 .009l.052 .01l.108 .032l.067 .027l.132 .07l.09 .065l.081 .073l.083 .094l.054 .077l.054 .096l.017 .036l.027 .067l.032 .108l.01 .053l.01 .06l.004 .057l.002 .059v12c0 .852 -.986 1.297 -1.623 .783l-.084 -.076l-6 -6a1 1 0 0 1 -.083 -1.32l.083 -.094l6 -6l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01z"/></svg></KBtn>
-        <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M18 9c.852 0 1.297 .986 .783 1.623l-.076 .084l-6 6a1 1 0 0 1 -1.32 .083l-.094 -.083l-6 -6l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057v-.118l.005 -.058l.009 -.06l.01 -.052l.032 -.108l.027 -.067l.07 -.132l.065 -.09l.073 -.081l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01l.057 -.004l12.059 -.002z"/></svg></KBtn>
-        <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M9 6c0 -.852 .986 -1.297 1.623 -.783l.084 .076l6 6a1 1 0 0 1 .083 1.32l-.083 .094l-6 6l-.094 .083l-.077 .054l-.096 .054l-.036 .017l-.067 .027l-.108 .032l-.053 .01l-.06 .01l-.057 .004l-.059 .002l-.059 -.002l-.058 -.005l-.06 -.009l-.052 -.01l-.108 -.032l-.067 -.027l-.132 -.07l-.09 -.065l-.081 -.073l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057l-.002 -12.059z"/></svg></KBtn>
+    {/* Shift + Bottom rows with arrow cluster */}
+    <div className="flex gap-0.5">
+      {/* Left: shift row + bottom row stacked */}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {/* Shift row */}
+        <div className="flex shrink-0 gap-0.5">
+          <KBtn className="w-[3.65rem] items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">shift</KBtn>
+          {["Z","X","C","V","B","N","M"].map(k => <KBtn key={k}><span className="block">{k}</span></KBtn>)}
+          <KBtn><span className="block">&lt;</span><span className="block">,</span></KBtn>
+          <KBtn><span className="block">&gt;</span><span className="block">.</span></KBtn>
+          <KBtn><span className="block">?</span><span className="block">/</span></KBtn>
+          <KBtn className="w-[3.65rem] items-end justify-end pr-1 pb-0.5" childrenClassName="items-end">shift</KBtn>
+        </div>
+        {/* Bottom row */}
+        <div className="flex shrink-0 gap-0.5">
+          <KBtn childrenClassName="h-full justify-between py-1">
+            <div className="flex w-full justify-end pr-1"><span className="block">fn</span></div>
+            <div className="flex w-full justify-start pl-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18"/></svg></div>
+          </KBtn>
+          <KBtn childrenClassName="h-full justify-between py-1">
+            <div className="flex w-full justify-end pr-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M6 15l6 -6l6 6"/></svg></div>
+            <div className="flex w-full justify-start pl-1"><span className="block">control</span></div>
+          </KBtn>
+          <KBtn childrenClassName="h-full justify-between py-1">
+            <div className="flex w-full justify-end pr-1"><OptionKey className="h-1.5 w-1.5" /></div>
+            <div className="flex w-full justify-start pl-1"><span className="block">option</span></div>
+          </KBtn>
+          <KBtn className="w-8" childrenClassName="h-full justify-between py-1">
+            <div className="flex w-full justify-end pr-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M7 9a2 2 0 1 1 2 -2v10a2 2 0 1 1 -2 -2h10a2 2 0 1 1 -2 2v-10a2 2 0 1 1 2 2h-10"/></svg></div>
+            <div className="flex w-full justify-start pl-1"><span className="block">command</span></div>
+          </KBtn>
+          <KBtn className="w-[8.2rem]" />
+          <KBtn className="w-8" childrenClassName="h-full justify-between py-1">
+            <div className="flex w-full justify-start pl-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M7 9a2 2 0 1 1 2 -2v10a2 2 0 1 1 -2 -2h10a2 2 0 1 1 -2 2v-10a2 2 0 1 1 2 2h-10"/></svg></div>
+            <div className="flex w-full justify-start pl-1"><span className="block">command</span></div>
+          </KBtn>
+          <KBtn childrenClassName="h-full justify-between py-1">
+            <div className="flex w-full justify-start pl-1"><OptionKey className="h-1.5 w-1.5" /></div>
+            <div className="flex w-full justify-start pl-1"><span className="block">option</span></div>
+          </KBtn>
+        </div>
+      </div>
+      {/* Right: arrow keys inverted-T */}
+      <div className="flex flex-col items-center justify-end gap-0.5 self-stretch">
+        <KBtn className="h-2.5!"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M11.293 7.293a1 1 0 0 1 1.32 -.083l.094 .083l6 6l.083 .094l.054 .077l.054 .096l.017 .036l.027 .067l.032 .108l.01 .053l.01 .06l.004 .057l.002 .059l-.002 .059l-.005 .058l-.009 .06l-.01 .052l-.032 .108l-.027 .067l-.07 .132l-.065 .09l-.073 .081l-.094 .083l-.077 .054l-.096 .054l-.036 .017l-.067 .027l-.108 .032l-.053 .01l-.06 .01l-.057 .004l-.059 .002h-12c-.852 0 -1.297 -.986 -.783 -1.623l.076 -.084l6 -6z"/></svg></KBtn>
+        <div className="flex gap-0.5">
+          <KBtn className="h-2.5!"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M13.883 5.007l.058 -.005h.118l.058 .005l.06 .009l.052 .01l.108 .032l.067 .027l.132 .07l.09 .065l.081 .073l.083 .094l.054 .077l.054 .096l.017 .036l.027 .067l.032 .108l.01 .053l.01 .06l.004 .057l.002 .059v12c0 .852 -.986 1.297 -1.623 .783l-.084 -.076l-6 -6a1 1 0 0 1 -.083 -1.32l.083 -.094l6 -6l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01z"/></svg></KBtn>
+          <KBtn className="h-2.5!"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M18 9c.852 0 1.297 .986 .783 1.623l-.076 .084l-6 6a1 1 0 0 1 -1.32 .083l-.094 -.083l-6 -6l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057v-.118l.005 -.058l.009 -.06l.01 -.052l.032 -.108l.027 -.067l.07 -.132l.065 -.09l.073 -.081l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01l.057 -.004l12.059 -.002z"/></svg></KBtn>
+          <KBtn className="h-2.5!"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M9 6c0 -.852 .986 -1.297 1.623 -.783l.084 .076l6 6a1 1 0 0 1 .083 1.32l-.083 .094l-6 6l-.094 .083l-.077 .054l-.096 .054l-.036 .017l-.067 .027l-.108 .032l-.053 .01l-.06 .01l-.057 .004l-.059 .002l-.059 -.002l-.058 -.005l-.06 -.009l-.052 -.01l-.108 -.032l-.067 -.027l-.132 -.07l-.09 -.065l-.081 -.073l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057l-.002 -12.059z"/></svg></KBtn>
+        </div>
       </div>
     </div>
   </div>
