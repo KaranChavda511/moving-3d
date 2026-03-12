@@ -192,63 +192,57 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
               </div>
             </motion.div>
 
-            {/* === BASE === */}
-            <div
-              className="relative h-36 w-64 overflow-hidden rounded-b-xl sm:h-52 sm:w-96 sm:rounded-b-2xl md:h-72 md:w-lg"
-              style={{
-                background: "linear-gradient(180deg, #3a3a3e 0%, #2c2c30 40%, #252528 100%)",
-              }}
-            >
-              {/* Cover — hides keyboard when closed */}
-              <motion.div
-                style={{ opacity: coverOpacity }}
-                className="absolute inset-0 z-10 rounded-b-xl bg-[#131313]"
-              />
-
-              {/* Hinge strip */}
+            {/* === BASE === rendered at native 32rem, scaled to fit */}
+            <div className="h-44 w-64 [--base-s:0.5] sm:h-66 sm:w-96 sm:[--base-s:0.75] md:h-88 md:w-lg md:[--base-s:1]">
               <div
-                className="h-1.5 w-full sm:h-2 md:h-2.5"
-                style={{ background: "linear-gradient(180deg, #1a1a1c 0%, #2a2a2e 100%)" }}
-              />
-
-              {/* Speaker + Keyboard row */}
-              <div className="flex px-1.5 pt-1 sm:px-2.5 sm:pt-1.5 md:px-4 md:pt-2">
-                {/* Left speaker */}
-                <div className="w-[8%] pt-0.5 sm:pt-1">
-                  <SpeakerGrid />
-                </div>
-
-                {/* Keyboard area */}
-                <div className="flex-1 px-1 sm:px-1.5 md:px-2">
-                  <SimpleKeyboard />
-                </div>
-
-                {/* Right speaker */}
-                <div className="w-[8%] pt-0.5 sm:pt-1">
-                  <SpeakerGrid />
-                </div>
-              </div>
-
-              {/* Trackpad */}
-              <div
-                className="mx-auto mt-1.5 h-10 w-[38%] rounded-md sm:mt-2 sm:h-16 sm:rounded-lg md:mt-3 md:h-24 md:rounded-xl"
+                className="relative origin-top-left overflow-hidden rounded-b-xl sm:rounded-b-2xl"
                 style={{
-                  background: "linear-gradient(180deg, #2e2e32 0%, #28282c 100%)",
-                  boxShadow: "0 0 0 0.5px #1a1a1e inset, 0 1px 2px rgba(0,0,0,0.3) inset",
+                  width: "32rem",
+                  height: "22rem",
+                  transform: "scale(var(--base-s))",
+                  background: "linear-gradient(180deg, #3a3a3e 0%, #2c2c30 40%, #252528 100%)",
                 }}
-              />
-
-              {/* Bottom notch */}
-              <div className="absolute inset-x-0 bottom-0 flex justify-center">
-                <div
-                  className="h-1 w-10 rounded-t-lg sm:h-1.5 sm:w-14 md:w-16"
-                  style={{ background: "linear-gradient(180deg, #1e1e22 0%, #28282c 100%)" }}
+              >
+                {/* Cover — hides keyboard when closed */}
+                <motion.div
+                  style={{ opacity: coverOpacity, pointerEvents: "none" }}
+                  className="absolute inset-0 z-10 rounded-b-xl bg-[#131313]"
                 />
-              </div>
 
-              {showGradient && (
-                <div className="absolute inset-x-0 bottom-0 z-50 h-16 w-full bg-linear-to-t from-black via-black to-transparent sm:h-24 md:h-32" />
-              )}
+                {/* Hinge strip / above keyboard bar */}
+                <div className="relative h-10 w-full">
+                  <div className="absolute inset-x-0 mx-auto h-4 w-[80%] bg-[#050505]" />
+                </div>
+
+                {/* Speaker + Keyboard + Speaker */}
+                <div className="relative flex">
+                  <div className="mx-auto h-full w-[10%] overflow-hidden">
+                    <SpeakerGrid />
+                  </div>
+                  <div className="mx-auto h-full w-[80%]">
+                    <Keypad />
+                  </div>
+                  <div className="mx-auto h-full w-[10%] overflow-hidden">
+                    <SpeakerGrid />
+                  </div>
+                </div>
+
+                {/* Trackpad */}
+                <div
+                  className="mx-auto my-1 h-32 w-[40%] rounded-xl bg-[#262630]"
+                  style={{
+                    boxShadow:
+                      "0px 0px 1px 1px rgba(255,255,255,0.08) inset, 0px 2px 4px 0px rgba(0,0,0,0.5) inset, 0px -1px 2px 0px rgba(255,255,255,0.04)",
+                  }}
+                />
+
+                {/* Bottom notch */}
+                <div className="absolute inset-x-0 bottom-0 mx-auto h-2 w-20 rounded-tl-3xl rounded-tr-3xl bg-linear-to-t from-[#272729] to-[#050505]" />
+
+                {showGradient && (
+                  <div className="absolute inset-x-0 bottom-0 z-50 h-40 w-full bg-linear-to-t from-black via-black to-transparent" />
+                )}
+              </div>
             </div>
           </div>
         </motion.div>
@@ -273,51 +267,144 @@ export const MacbookScroll = ({ src, videoSrc, title, showGradient = true }) => 
   )
 }
 
-const SpeakerGrid = () => {
-  return (
+const SpeakerGrid = () => (
+  <div
+    className="mt-2 flex h-40 gap-0.5 px-[0.5px]"
+    style={{
+      backgroundImage: "radial-gradient(circle, #08080A 0.5px, transparent 0.5px)",
+      backgroundSize: "3px 3px",
+    }}
+  />
+)
+
+const KBtn = ({ className, children, childrenClassName, backlit = true }) => (
+  <div
+    className={`group/key cursor-pointer rounded-sm p-[0.5px] transition-all duration-100 ease-out will-change-transform active:duration-40 ${backlit ? "bg-white/20 shadow-sm shadow-white/40 active:bg-white/10 active:shadow-white/20" : ""}`}
+    style={{ transformStyle: "preserve-3d" }}
+  >
     <div
-      className="h-14 w-full rounded-sm sm:h-20 md:h-28"
+      className={`flex h-6 w-6 items-center justify-center rounded-[3.5px] bg-[#0A090D] transition-all duration-100 ease-out group-active/key:translate-y-[1.5px] group-active/key:scale-[0.97] group-active/key:bg-[#070709] active:duration-40 ${className || ""}`}
       style={{
-        backgroundImage:
-          "radial-gradient(circle, #1a1a1e 0.5px, transparent 0.5px)",
-        backgroundSize: "3px 3px",
+        boxShadow: "0px -0.5px 2px 0 #0D0D0F inset, -0.5px 0px 2px 0 #0D0D0F inset",
       }}
-    />
-  )
-}
-
-const KEYBOARD_ROWS = [
-  ["esc", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "⏏"],
-  ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "⌫"],
-  ["⇥", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "\\"],
-  ["⇪", "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "⏎"],
-  ["⇧", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", "⇧"],
-  ["fn", "⌃", "⌥", "⌘", "", "⌘", "⌥", "←", "↑", "↓", "→"],
-]
-
-const SimpleKeyboard = () => {
-  return (
-    <div className="flex flex-col gap-[1.5px] sm:gap-0.5 md:gap-0.75">
-      {KEYBOARD_ROWS.map((row, rowIdx) => (
-        <div key={rowIdx} className="flex w-full gap-[1.5px] sm:gap-0.5 md:gap-0.75">
-          {row.map((key, keyIdx) => (
-            <div
-              key={keyIdx}
-              className={`flex items-center justify-center rounded-[1.5px] text-white/40 sm:rounded-xs md:rounded-sm ${
-                key === "" ? "flex-3" : rowIdx === 0 ? "h-2 flex-1 sm:h-3 md:h-4" : "h-3 flex-1 sm:h-4.5 md:h-6"
-              }`}
-              style={{
-                fontSize: rowIdx === 0 ? "4px" : "5px",
-                background: "linear-gradient(180deg, #222226 0%, #18181c 100%)",
-                boxShadow:
-                  "0 1px 0 0 #2e2e32, 0 -0.5px 0 0 #0c0c10 inset, 0.5px 0 0 0 #0c0c10 inset, -0.5px 0 0 0 #0c0c10 inset",
-              }}
-            >
-              <span className="hidden sm:block sm:text-[6px] md:text-[8px]">{key}</span>
-            </div>
-          ))}
-        </div>
-      ))}
+    >
+      <div className={`flex w-full flex-col items-center justify-center text-[5px] text-white transition-opacity duration-100 group-active/key:opacity-80 ${childrenClassName || ""}`}>
+        {children}
+      </div>
     </div>
-  )
-}
+  </div>
+)
+
+const OptionKey = ({ className }) => (
+  <svg
+    fill="none"
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 32 32"
+    className={className}
+  >
+    <rect stroke="currentColor" strokeWidth={2} x="18" y="5" width="10" height="2" />
+    <polygon stroke="currentColor" strokeWidth={2} points="10.6,5 4,5 4,7 9.4,7 18.4,27 28,27 28,25 19.6,25" />
+    <rect width="32" height="32" stroke="none" />
+  </svg>
+)
+
+const Keypad = () => (
+  <div className="relative mx-1 h-full rounded-md bg-[#050505] p-1 transform-[translateZ(0)] will-change-transform">
+    {/* Function row */}
+    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
+      <KBtn className="w-10 items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">esc</KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><circle cx="12" cy="12" r="3"/><path d="M12 5l0 .01M17 7l0 .01M19 12l0 .01M17 17l0 .01M12 19l0 .01M7 17l0 .01M5 12l0 .01M7 7l0 .01"/></svg><span className="mt-1 inline-block">F1</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><circle cx="12" cy="12" r="3"/><path d="M12 5l0 -2M17 7l1.4 -1.4M19 12l2 0M17 17l1.4 1.4M12 19l0 2M7 17l-1.4 1.4M6 12l-2 0M7 7l-1.4 -1.4"/></svg><span className="mt-1 inline-block">F2</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z"/><path d="M3 10h18"/><path d="M10 3v18"/></svg><span className="mt-1 inline-block">F3</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6 -6"/></svg><span className="mt-1 inline-block">F4</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M9 2m0 3a3 3 0 0 1 3 -3h0a3 3 0 0 1 3 3v5a3 3 0 0 1 -3 3h0a3 3 0 0 1 -3 -3z"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M8 21l8 0"/><path d="M12 17l0 4"/></svg><span className="mt-1 inline-block">F5</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/></svg><span className="mt-1 inline-block">F6</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M21 5v14l-8 -7z"/><path d="M10 5v14l-8 -7z"/></svg><span className="mt-1 inline-block">F7</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M4 5v14l12 -7z"/><path d="M20 5l0 14"/></svg><span className="mt-1 inline-block">F8</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M3 5v14l8 -7z"/><path d="M14 5v14l8 -7z"/></svg><span className="mt-1 inline-block">F9</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/><path d="M16 10l4 4m0 -4l-4 4"/></svg><span className="mt-1 inline-block">F10</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></svg><span className="mt-1 inline-block">F11</span></KBtn>
+      <KBtn><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></svg><span className="mt-1 inline-block">F12</span></KBtn>
+      <KBtn><div className="h-4 w-4 rounded-full bg-linear-to-b from-neutral-900 from-20% via-black via-50% to-neutral-900 to-95% p-px"><div className="h-full w-full rounded-full bg-black" /></div></KBtn>
+    </div>
+
+    {/* Number row */}
+    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
+      <KBtn><span className="block">~</span><span className="mt-1 block">`</span></KBtn>
+      {[["!","1"],["@","2"],["#","3"],["$","4"],["%","5"],["^","6"],["&","7"],["*","8"],["(","9"],[")","0"]].map(([t,b],i) => (
+        <KBtn key={i}><span className="block">{t}</span><span className="block">{b}</span></KBtn>
+      ))}
+      <KBtn><span className="block">&mdash;</span><span className="block">_</span></KBtn>
+      <KBtn><span className="block">+</span><span className="block">=</span></KBtn>
+      <KBtn className="w-10 items-end justify-end pr-1 pb-0.5" childrenClassName="items-end">delete</KBtn>
+    </div>
+
+    {/* QWERTY row */}
+    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
+      <KBtn className="w-10 items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">tab</KBtn>
+      {["Q","W","E","R","T","Y","U","I","O","P"].map(k => <KBtn key={k}><span className="block">{k}</span></KBtn>)}
+      <KBtn><span className="block">{"{"}</span><span className="block">{"["}</span></KBtn>
+      <KBtn><span className="block">{"}"}</span><span className="block">{"]"}</span></KBtn>
+      <KBtn><span className="block">{"|"}</span><span className="block">{"\\"}</span></KBtn>
+    </div>
+
+    {/* Home row */}
+    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
+      <KBtn className="w-[2.8rem] items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">caps lock</KBtn>
+      {["A","S","D","F","G","H","J","K","L"].map(k => <KBtn key={k}><span className="block">{k}</span></KBtn>)}
+      <KBtn><span className="block">:</span><span className="block">;</span></KBtn>
+      <KBtn><span className="block">&quot;</span><span className="block">&apos;</span></KBtn>
+      <KBtn className="w-[2.85rem] items-end justify-end pr-1 pb-0.5" childrenClassName="items-end">return</KBtn>
+    </div>
+
+    {/* Shift row */}
+    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
+      <KBtn className="w-[3.65rem] items-end justify-start pb-0.5 pl-1" childrenClassName="items-start">shift</KBtn>
+      {["Z","X","C","V","B","N","M"].map(k => <KBtn key={k}><span className="block">{k}</span></KBtn>)}
+      <KBtn><span className="block">&lt;</span><span className="block">,</span></KBtn>
+      <KBtn><span className="block">&gt;</span><span className="block">.</span></KBtn>
+      <KBtn><span className="block">?</span><span className="block">/</span></KBtn>
+      <KBtn className="w-[3.65rem] items-end justify-end pr-1 pb-0.5" childrenClassName="items-end">shift</KBtn>
+    </div>
+
+    {/* Bottom row */}
+    <div className="mb-0.5 flex w-full shrink-0 gap-0.5">
+      <KBtn childrenClassName="h-full justify-between py-1">
+        <div className="flex w-full justify-end pr-1"><span className="block">fn</span></div>
+        <div className="flex w-full justify-start pl-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18"/></svg></div>
+      </KBtn>
+      <KBtn childrenClassName="h-full justify-between py-1">
+        <div className="flex w-full justify-end pr-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M6 15l6 -6l6 6"/></svg></div>
+        <div className="flex w-full justify-start pl-1"><span className="block">control</span></div>
+      </KBtn>
+      <KBtn childrenClassName="h-full justify-between py-1">
+        <div className="flex w-full justify-end pr-1"><OptionKey className="h-1.5 w-1.5" /></div>
+        <div className="flex w-full justify-start pl-1"><span className="block">option</span></div>
+      </KBtn>
+      <KBtn className="w-8" childrenClassName="h-full justify-between py-1">
+        <div className="flex w-full justify-end pr-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M7 9a2 2 0 1 1 2 -2v10a2 2 0 1 1 -2 -2h10a2 2 0 1 1 -2 2v-10a2 2 0 1 1 2 2h-10"/></svg></div>
+        <div className="flex w-full justify-start pl-1"><span className="block">command</span></div>
+      </KBtn>
+      <KBtn className="w-[8.2rem]" />
+      <KBtn className="w-8" childrenClassName="h-full justify-between py-1">
+        <div className="flex w-full justify-start pl-1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-1.5 w-1.5"><path d="M7 9a2 2 0 1 1 2 -2v10a2 2 0 1 1 -2 -2h10a2 2 0 1 1 -2 2v-10a2 2 0 1 1 2 2h-10"/></svg></div>
+        <div className="flex w-full justify-start pl-1"><span className="block">command</span></div>
+      </KBtn>
+      <KBtn childrenClassName="h-full justify-between py-1">
+        <div className="flex w-full justify-start pl-1"><OptionKey className="h-1.5 w-1.5" /></div>
+        <div className="flex w-full justify-start pl-1"><span className="block">option</span></div>
+      </KBtn>
+    </div>
+
+    {/* Arrow keys — absolutely positioned bottom-right, spanning shift + bottom rows */}
+    <div className="absolute bottom-1 right-1 flex flex-col items-center gap-0.5">
+      <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M11.293 7.293a1 1 0 0 1 1.32 -.083l.094 .083l6 6l.083 .094l.054 .077l.054 .096l.017 .036l.027 .067l.032 .108l.01 .053l.01 .06l.004 .057l.002 .059l-.002 .059l-.005 .058l-.009 .06l-.01 .052l-.032 .108l-.027 .067l-.07 .132l-.065 .09l-.073 .081l-.094 .083l-.077 .054l-.096 .054l-.036 .017l-.067 .027l-.108 .032l-.053 .01l-.06 .01l-.057 .004l-.059 .002h-12c-.852 0 -1.297 -.986 -.783 -1.623l.076 -.084l6 -6z"/></svg></KBtn>
+      <div className="flex gap-0.5">
+        <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M13.883 5.007l.058 -.005h.118l.058 .005l.06 .009l.052 .01l.108 .032l.067 .027l.132 .07l.09 .065l.081 .073l.083 .094l.054 .077l.054 .096l.017 .036l.027 .067l.032 .108l.01 .053l.01 .06l.004 .057l.002 .059v12c0 .852 -.986 1.297 -1.623 .783l-.084 -.076l-6 -6a1 1 0 0 1 -.083 -1.32l.083 -.094l6 -6l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01z"/></svg></KBtn>
+        <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M18 9c.852 0 1.297 .986 .783 1.623l-.076 .084l-6 6a1 1 0 0 1 -1.32 .083l-.094 -.083l-6 -6l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057v-.118l.005 -.058l.009 -.06l.01 -.052l.032 -.108l.027 -.067l.07 -.132l.065 -.09l.073 -.081l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01l.057 -.004l12.059 -.002z"/></svg></KBtn>
+        <KBtn className="h-3 w-6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="h-1.5 w-1.5"><path d="M9 6c0 -.852 .986 -1.297 1.623 -.783l.084 .076l6 6a1 1 0 0 1 .083 1.32l-.083 .094l-6 6l-.094 .083l-.077 .054l-.096 .054l-.036 .017l-.067 .027l-.108 .032l-.053 .01l-.06 .01l-.057 .004l-.059 .002l-.059 -.002l-.058 -.005l-.06 -.009l-.052 -.01l-.108 -.032l-.067 -.027l-.132 -.07l-.09 -.065l-.081 -.073l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057l-.002 -12.059z"/></svg></KBtn>
+      </div>
+    </div>
+  </div>
+)
